@@ -104,7 +104,9 @@ Homogeneous Autoencoders with Adaptive Asymptotic Homogeneity}
 % TODO: Update abstract after completing experiments
 % ==============================================================================
 \begin{abstract}
-Extreme value analysis of high-dimensional data requires dimension reduction that preserves heavy-tailed structure. We introduce \emph{homogeneous autoencoders}, a novel architecture that provably preserves tail measures through encoder homogeneity while adapting to non-homogeneous manifold geometry via a three-component decoder with sparsity regularization. Our key innovation is an \emph{adaptive asymptotic homogeneity} mechanism: the decoder separates into a homogeneous baseline plus a sparse correction term that is penalized to vanish in the tail, enabling faithful extreme value generation while maintaining reconstruction quality on complex manifolds. We provide theoretical analysis showing that bounded scaling combined with sparsity ensures tail index preservation, and validate our approach on synthetic manifolds (cones, surfaces) and real-world heavy-tailed datasets (TODO: insert 2-3 dataset names). Our method achieves TODO\% better tail index preservation than standard autoencoders while maintaining competitive reconstruction quality (TODO: insert quantitative results). Code is available at TODO. 
+Extreme value analysis of high-dimensional data requires dimension reduction that preserves heavy-tailed structure. TBC
+
+% We introduce \emph{homogeneous autoencoders}, a novel architecture that provably preserves tail measures through encoder homogeneity while adapting to non-homogeneous manifold geometry via a three-component decoder with sparsity regularization. Our key innovation is an \emph{adaptive asymptotic homogeneity} mechanism: the decoder separates into a homogeneous baseline plus a sparse correction term that is penalized to vanish in the tail, enabling faithful extreme value generation while maintaining reconstruction quality on complex manifolds. We provide theoretical analysis showing that bounded scaling combined with sparsity ensures tail index preservation, and validate our approach on synthetic manifolds (cones, surfaces) and real-world heavy-tailed datasets (TODO: insert 2-3 dataset names). Our method achieves TODO\% better tail index preservation than standard autoencoders while maintaining competitive reconstruction quality (TODO: insert quantitative results). Code is available at TODO. 
 \end{abstract}
 
 % ==============================================================================
@@ -141,7 +143,7 @@ We now consider a scenario in which the ambient data is heavy-tailed (in the sen
 \qquad
 \mathbb{O}_m := \mathbb{R}^m \setminus \{0\}.
 \]
-Let \(\nu = \mathcal{L}(X)\) denote the law of \(X\) on \(\mathbb{O}_D\) and $\mathbb{M}(\mathbb{O}_D)$ the space of measures on $\mathbb{O}_D$. Following \cite{lindskog_regularly_2014}, we say that \(X\) is \emph{regularly varying} on \(\mathbb{O}_D\) with index \(\alpha > 0\) if there exists an increasing scaling function
+Throughout this work, we assume \(\mathbb{P}(X = 0) = 0\), so that the support of \(X\) is contained in \(\mathbb{O}_D\). Let \(\nu = \mathcal{L}(X)\) denote the law of \(X\) on \(\mathbb{O}_D\) and $\mathbb{M}(\mathbb{O}_D)$ the space of measures on $\mathbb{O}_D$. Following \cite{lindskog_regularly_2014}, we say that \(X\) is \emph{regularly varying} on \(\mathbb{O}_D\) with index \(\alpha > 0\) if there exists an increasing scaling function
 \[
 b:(0,\infty)\to(0,\infty),
 \qquad
@@ -163,13 +165,16 @@ t\,\mathbb{P}\!\left(\frac{X}{b(t)} \in \cdot \right)
 \qquad
 \text{in } \mathbb{M}(\mathbb{O}_D).
 \]
-The measure \(\mu\) is referred to as the \emph{ambient tail measure} of \(X\). By \cite[Theorem 3.1]{lindskog_regularly_2014}. Equivalently, the limit measure \(\mu\) is \(\alpha\)-homogeneous:
+The measure \(\mu\) is referred to as the \emph{ambient tail measure} of \(X\). By \cite[Theorem 3.1]{lindskog_regularly_2014}, the limit measure \(\mu\) is \(\alpha\)-homogeneous:
 \[
 \mu(\lambda A)=\lambda^{-\alpha}\mu(A),
 \qquad
 \lambda>0,
 \]
 for all measurable \(A \subset \mathbb{O}_D\). See also \cite[Theorem 6.1 and Section 6.5.5]{resnick_heavy-tail_2007}. For avoidance of confusion, note that here and throughout, homogeneity of \emph{measures} refers to scaling of dilated sets: $\mu(\lambda A)=\lambda^{-\alpha}\mu(A)$ and homogeneity of \emph{maps} refers to the usual scaling relation $f(\lambda x)= \lambda^p f(x)$.
+
+[TODO: CHECK THIS - It's a bit of a claim]
+When \(X\) is supported on a manifold \(\cM\) and is regularly varying with homogeneous tail measure \(\mu\), the homogeneity of \(\mu\) implies that its support is necessarily a cone (invariant under positive dilations). This means that extreme observations on \(\cM\) asymptotically concentrate on directions described by the conical set \(\mathrm{supp}(\mu)\). While \(\cM\) may be curved at moderate scales, its tail behavior is governed by conical geometry, which motivates our use of asymptotically homogeneous decoders.
 
 The manifold-support assumption is geometric and regular variation is asymptotic. The former constrains the support of the data and the latter determines the extreme-value behaviour of the data. Our objective is to develop a representation-learning framework that respects both low-dimensional structure through \(\cM\) and tail structure through \(\mu\). The results below are formulated in the ambient punctured space \(\mathbb{O}_D\); the manifold structure becomes important later when constructing a low-dimensional representation and a corresponding decoder.
 
@@ -224,6 +229,7 @@ is continuous at \(\mu\) provided \(\mu(D_h)=0\), where \(D_h\) denotes the set 
 The significance of the mapping theorem in our work is that it enables regular variation to be transported from ambient space to latent space through a sufficiently regular encoder. When this encoder is homogeneous, one obtains not only convergence of pushforward measures (and thus existence of the latent tail measure) but also an explicit description of the resulting tail index.
 
 \begin{proposition}[Regular variation under homogeneous encoders]
+\label{prop:reg-variation-under-homogeneous-encoders}
 Let \(X\) be regularly varying on \(\mathbb{O}_D\) with scaling function \(b\), index \(\alpha>0\), and tail measure \(\mu\), i.e.
 \[
 t\,\mathbb{P}\!\left(\frac{X}{b(t)} \in \cdot \right)
@@ -297,11 +303,11 @@ t\,\mathbb{P}\!\left(\frac{f(X)}{b(t)^p}\in A\right)
 \]
 Therefore \(f(X)\) is regularly varying on \(\mathbb{O}_m\) with scaling function \(b_f(t)=b(t)^p\) and tail measure \(\mu_f=f_{\#}\mu = \mu\circ f^{-1}\).
 
-To identify the tail (homogeneity) index of \(\mu_f\), let \(A\subset\mathbb{O}_m\) be measurable and bounded away from $0$ and let \(\lambda>0\). Using the homogeneity of \(f\),
+To identify the tail (homogeneity) index of \(\mu_f\), let \(A\subset\mathbb{O}_m\) be measurable and bounded away from $0$ and let \(\lambda>0\). By homogeneity of \(f\), we have \(f(x)\in\lambda A\) if and only if \(f(\lambda^{-1/p}x)\in A\), which gives
 \[
-f^{-1}(\lambda A)=\lambda^{1/p} f^{-1}(A),
+f^{-1}(\lambda A)=\lambda^{1/p} f^{-1}(A).
 \]
-therefore,
+Therefore,
 \[
 \mu_f(\lambda A)
 =
@@ -318,1177 +324,1403 @@ Thus \(\mu_f\) is \(\frac{\alpha}{p}\)-homogeneous. Equivalently, $f(X)$ is regu
 
 This proposition highlights a sufficient condition for latent tail consistency: if the encoder \(f\) is positively homogeneous of known degree \(p\), then the latent variable \(Z=f(X)\) is regularly varying with tail measure \(f_{\#}\mu\) and tail index \(\alpha/p\). Thus, the latent tail law is explicitly determined by the ambient tail law and the scaling behaviour of the encoder.
 
-[TODO: THIS DECODER SECTION SHOULD BE AN ENTIRELY NEW SECTION]
+This motivates the core architectural choice of this paper: structurally enforcing homogeneity of the encoder so that tail behaviour is transported to latent space in closed form. In contrast, the decoder need not be globallyw homogeneous and in fact, this ought to be avoided altogether [TODO: MAYBE EXPLAIN THIS MORE USING DIAGRAMS OF HOW HOMOGENEOUS ENCODER CAN CAUSE OFF-MANIFOLD RECONSTRUCTIONS]. Exact homogeneity is useful for tail transport, but in fact structurally incompatible for reconstruction of curved manifold geometry. Instead, we require only that the decoder is \emph{asymptotically homogeneous}, meaning that it converges to a homogeneous map at large scales while retaining flexibility at finite scales to capture manifold curvature.
 
-This motivates the core architectural choice of this paper: structurally enforcing homogeneity of the encoder so that tail behaviour is transported to latent space in closed form. In contrast, the decoder need not be globally homogeneous and in fact, this ought to be avoided alltogether [TODO: MAYBE EXPLAIN THIS MORE USING DIAGRAMS OF HOW HOMOGENEOUS ENCODER CAN CAUSE OFF-MANIFOLD RECONSTRUCTIONS]. Exact homogeneity is useful for tail transport, but in fact structurally incompatible for reconstruction of curved manifold geometry.
-
-In order to tackle this problem, we model the decoder as
-\[
-h(z)=h_{\mathrm{hom}}(z)+h_{\mathrm{cor}}(z),
-\]
-where \(h_{\mathrm{hom}}\) is homogeneous and \(h_{\mathrm{cor}}\) is a correction to capture non-homogeneous (curved) features of \(\cM\) at moderate scales, while a regularisation penalty (see section [TODO: REF THIS SECTION] for details) forces \(h_{\mathrm{cor}}\) to be negligible relative to \(h_{\mathrm{hom}}\) in the tail. At large scales, decoding is controlled by the homogeneous component, so the asymptotic properties of the latent representation are retained upon reconstruction. [TODO: REWRITE THIS SECTION TO EXPLAIN WHY ASYMPTOTIC HOMOGENEITY IS COMPATIBLE WITH THE AMBIENT MANIFOLD BY ASSUMPTION]. This is the basis of the presented autoencoder framework: latent representations are learned in a way that is compatible with regular variation, while complex ambient manifold geometry can be recovered through an adaptively asymptotically homogeneous decoder.
+To achieve this, the decoder is designed to be homogeneous at large scales but admits non-homogeneous corrections at moderate scales to capture curved features of \(\cM\). A these corrections are regularised to vanish in the tail, ensuring that at large scales, decoding is controlled by a homogeneous component, so the asymptotic properties of the latent representation are retained upon reconstruction. [TODO: REWRITE THIS SECTION TO EXPLAIN WHY ASYMPTOTIC HOMOGENEITY IS COMPATIBLE WITH THE AMBIENT MANIFOLD BY ASSUMPTION]. This is the basis of the presented autoencoder framework: latent representations are learned in a way that is compatible with regular variation, while complex ambient manifold geometry can be recovered through an adaptively asymptotically homogeneous decoder.
 
 \subsection{General form of homogeneous maps}
 \label{sec:homogeneous-maps}
-TODO: CHECK THIS SECTION: 
+[TODO: MOST OF THIS WILL GO IN AN APPENDIX]
 
-In this section we show that every homogeneous map from Euclidian space admits a canonical radial--angular representation. This is extremely useful for learning, since homogeneity is enforced by construction, one may parameterise the angular component unrestricted while preserving the required scaling law automatically. This motivates the architecture of the encoder architecture used later in section [TODO: REF SECTION].
+In this section we show that every positively homogeneous map on
+\(\mathbb{R}^D\setminus\{0\}\) admits a unique radial--angular factorisation
+for a given norm. This is extremely useful in a machine learning setting: since homogeneity is enforced by construction in this representation, one may parameterise the angular component unrestricted while always satisfying the required scaling law. This observation motivates the encoder architecture introduced later in
+Section~\ref{sec:encoder-architecture} [TODO: REF SECTION].
 
-In this section we record a basic structural fact about positively homogeneous maps on
+Let
 \[
-\mathbb{O}_D:=\mathbb{R}^D\setminus\{0\}.
+\mathbb{O}_D := \mathbb{R}^D \setminus \{0\}.
 \]
-Writing \(x\in\mathbb{O}_D\) in polar form,
+Fix \(q \in [1,\infty]\). For each \(x \in \mathbb{O}_D\), write
 \[
-x=\rho\,\theta,
+x = \rho\,\theta,
 \qquad
-\rho:=\|x\|_q>0,
+\rho := \|x\|_q > 0,
 \qquad
-\theta:=\frac{x}{\|x\|_q}\in \mathbb{S}^{D-1}_q,
+\theta := \frac{x}{\|x\|_q} \in \mathbb{S}^{D-1}_q,
 \]
 where
 \[
-\mathbb{S}^{D-1}_q:=\{u\in\mathbb{R}^D:\|u\|_q=1\},
+\mathbb{S}^{D-1}_q := \{u \in \mathbb{R}^D : \|u\|_q = 1\}.
 \]
-one sees that positive homogeneity is equivalent to a separation of radial and angular variables. This is useful for parameterisation: the radial dependence is fixed by the homogeneity degree, while the remaining freedom is carried entirely by an unconstrained angular map. This observation underlies the encoder parameterisation used later in Section~\ref{...}.
 
-\begin{proposition}[Product form of positively homogeneous maps]
+\begin{proposition}[Radial--angular factorisation of positively homogeneous maps]
 \label{prop:canonical-homogeneous-form}
-Let \(f:\mathbb{O}_D\to\mathbb{R}^m\) and let \(p>0\). Then the following are equivalent:
+Let \(f : \mathbb{O}_D \to \mathbb{R}^m\) and let \(p \in \mathbb{R}\). Then the
+following are equivalent:
 \begin{enumerate}
-    \item \(f\) is positively homogeneous of degree \(p\), i.e.
+    \item \(f\) is positively homogeneous of degree \(p\), that is,
     \[
-    f(\lambda x)=\lambda^p f(x),
-    \qquad x\in\mathbb{O}_D,\ \lambda>0;
+    f(\lambda x) = \lambda^p f(x),
+    \qquad x \in \mathbb{O}_D,\ \lambda > 0;
     \]
     \item there exists a unique map
     \[
-    g:\mathbb{S}^{D-1}_q\to\mathbb{R}^m
+    g : \mathbb{S}^{D-1}_q \to \mathbb{R}^m
     \]
     such that
     \[
-    f(x)=\|x\|_q^p\,g\!\left(\frac{x}{\|x\|_q}\right),
-    \qquad x\in\mathbb{O}_D.
+    f(x) = \|x\|_q^p\, g\!\left(\frac{x}{\|x\|_q}\right),
+    \qquad x \in \mathbb{O}_D.
     \]
 \end{enumerate}
 \end{proposition}
 
 \begin{proof}
-Assume first that \(f\) is positively homogeneous of degree \(p\). Define
+Firstly, to verifying that the provided factorisation is indeed homogeneous, suppose that
 \[
-g(\theta):=f(\theta),
-\qquad \theta\in\mathbb{S}^{D-1}_q.
+f(x) = \|x\|_q^p\, g\!\left(\frac{x}{\|x\|_q}\right),
+\qquad x \in \mathbb{O}_D.
 \]
-For any \(x\in\mathbb{O}_D\), writing
+Then for every \(\lambda > 0\),
 \[
-x=\|x\|_q\,\frac{x}{\|x\|_q},
+f(\lambda x)
+=
+\|\lambda x\|_q^p\, g\!\left(\frac{\lambda x}{\|\lambda x\|_q}\right)
+=
+(\lambda \|x\|_q)^p\, g\!\left(\frac{x}{\|x\|_q}\right)
+=
+\lambda^p f(x),
 \]
-the homogeneity of \(f\) gives
+since \(\|\lambda x\|_q = \lambda \|x\|_q\) for \(\lambda > 0\). Thus \(f\) is
+positively homogeneous of degree \(p\).
+
+Now to show that any valid f always admits a radial--angular factorisation. Assume that \(f\) is positively homogeneous of degree \(p\). Define
+\[
+g(\theta) := f(\theta),
+\qquad \theta \in \mathbb{S}^{D-1}_q.
+\]
+For any \(x \in \mathbb{O}_D\), we have
+\[
+x = \|x\|_q \frac{x}{\|x\|_q},
+\]
+and therefore, by positive homogeneity,
 \[
 f(x)
 =
-f\!\left(\|x\|_q\,\frac{x}{\|x\|_q}\right)
+f\!\left(\|x\|_q \frac{x}{\|x\|_q}\right)
 =
-\|x\|_q^p\,f\!\left(\frac{x}{\|x\|_q}\right)
+\|x\|_q^p\, f\!\left(\frac{x}{\|x\|_q}\right)
 =
-\|x\|_q^p\,g\!\left(\frac{x}{\|x\|_q}\right).
+\|x\|_q^p\, g\!\left(\frac{x}{\|x\|_q}\right).
 \]
 This proves existence.
 
 To prove uniqueness, suppose also that
 \[
-f(x)=\|x\|_q^p\,\tilde g\!\left(\frac{x}{\|x\|_q}\right)
+f(x) = \|x\|_q^p\, \tilde g\!\left(\frac{x}{\|x\|_q}\right)
 \]
-for some \(\tilde g:\mathbb{S}^{D-1}_q\to\mathbb{R}^m\). Evaluating at \(x=\theta\in\mathbb{S}^{D-1}_q\), for which \(\|\theta\|_q=1\), yields
+for some map \(\tilde g : \mathbb{S}^{D-1}_q \to \mathbb{R}^m\). Let
+\(\theta \in \mathbb{S}^{D-1}_q\). Since \(\|\theta\|_q = 1\), evaluating both
+representations at \(x=\theta\) gives
 \[
-g(\theta)=f(\theta)=\tilde g(\theta),
-\]
-so \(g=\tilde g\).
-
-Conversely, if
-\[
-f(x)=\|x\|_q^p\,g\!\left(\frac{x}{\|x\|_q}\right),
-\]
-then for every \(\lambda>0\),
-\[
-f(\lambda x)
-=
-\|\lambda x\|_q^p\,g\!\left(\frac{\lambda x}{\|\lambda x\|_q}\right)
-=
-(\lambda\|x\|_q)^p\,g\!\left(\frac{x}{\|x\|_q}\right)
-=
-\lambda^p f(x).
-\]
-Thus \(f\) is positively homogeneous of degree \(p\).
-\end{proof}
-
-\begin{remark}
-The proposition shows that a positively homogeneous map is determined completely by its restriction to the unit \(q\)-sphere. The radial dependence is prescribed by the power law \(\|x\|_q^p\), and all remaining structure is encoded by the angular component \(g\).
-\end{remark}
-
-When \(g(\theta)\neq 0\), one may further decompose
-\[
-g(\theta)=a(\theta)e(\theta),
-\qquad
-a(\theta):=\|g(\theta)\|_2,
-\qquad
-e(\theta):=\frac{g(\theta)}{\|g(\theta)\|_2}\in\mathbb{S}^{m-1}.
-\]
-Accordingly,
-\[
-f(x)=\|x\|_q^p\,a\!\left(\frac{x}{\|x\|_q}\right)e\!\left(\frac{x}{\|x\|_q}\right).
-\]
-The same argument applies verbatim to any positively homogeneous choice of radial coordinate and associated angular normalisation.
-
-
-
-
-
-
-% TODO: Write 2-3 paragraphs on motivation
-% Content to include:
-% - Heavy-tailed data is ubiquitous (finance, climate, networks, anomalies)
-% - Extreme value analysis needs to be done, but data is high-dimensional
-% - Dimensionality reduction is necessary, but standard methods don't preserve tail structure
-% - Example: financial crisis analysis requires understanding tail behavior in latent space
-\paragraph{Motivation.}
-TODO: Write compelling motivation for tail-preserving dimensionality reduction. Include:
-\begin{itemize}
-    \item Why heavy-tailed data matters (finance, climate, networks)
-    \item Need for dimensionality reduction in EVT
-    \item Failure of standard autoencoders to preserve tail structure
-    \item Concrete example or application
-\end{itemize}
-
-% TODO: Problem statement paragraph
-% Content: What are we trying to learn? Input/output, constraints, objectives
-\paragraph{Problem statement.}
-TODO: Clearly state the learning problem. Should include:
-\begin{itemize}
-    \item Input: Data X on manifold \(\cM \subset \RR^D\) with regularly varying distribution
-    \item Goal: Learn encoder \(f: \RR^D \to \RR^m\) (with \(m < D\)) that:
-    \begin{enumerate}
-        \item Preserves tail measure (for EVT in latent space)
-        \item Allows faithful reconstruction
-        \item Enables generation of extreme values
-    \end{enumerate}
-
-\end{itemize}
-
-% TODO: Why existing approaches fail
-\paragraph{Challenges.}
-TODO: Explain why this is hard and why standard methods fail. Include:
-\begin{itemize}
-    \item Standard autoencoders: no homogeneity → tail structure not preserved
-    \item Homogeneous maps alone: cannot handle non-homogeneous manifolds
-    \item Local vs asymptotic homogeneity: manifolds may be complex locally but cone-like in tail
-    \item Need for adaptive mechanism
-\end{itemize}
-
-% TODO: Our approach paragraph
-\paragraph{Our approach.}
-TODO: Describe our solution at high level (save details for Method section). Include:
-\begin{itemize}
-    \item Encoder: exactly \(p\)-homogeneous via product form \(w = r^p \cdot g(u)\)
-    \item Decoder: three components with adaptive homogeneity
-    \item Key innovation: sparsity-regularized correction term
-    \item Intuition: be flexible locally, homogeneous in tail
-\end{itemize}
-
-% TODO: Contributions list with quantitative claims where possible
-\paragraph{Contributions.}
-TODO: List contributions. For NeurIPS acceptance, should include:
-\begin{enumerate}[leftmargin=1.5em]
-    \item \textbf{Method}: Three-component decoder architecture with adaptive asymptotic homogeneity (Section~\ref{sec:method})
-    \item \textbf{Theory}: Analysis of tail preservation under bounded scaling and sparsity (Section~\ref{sec:theory})
-    \item \textbf{Experiments}: Validation on synthetic and real-world heavy-tailed data (Section~\ref{sec:experiments})
-    \begin{itemize}
-        \item TODO: Add quantitative claim (e.g., ``X\% improvement in tail index preservation'')
-        \item TODO: Add claim about generation quality
-    \end{itemize}
-    \item \textbf{Insights}: When does the sparsity mechanism work? Connection to manifold geometry (Section~\ref{sec:discussion})
-    \item \textbf{Code}: Open-source implementation TODO: add repo name/link
-\end{enumerate}
-
-% ==============================================================================
-% SECTION 2: BACKGROUND AND RELATED WORK
-% ==============================================================================
-% TODO LIST FOR THIS SECTION:
-% - [  ] Write Extreme Value Theory in ML paragraph (3-5 citations)
-% - [  ] Write Manifold Learning and Autoencoders paragraph (5-8 citations)
-% - [  ] Write Homogeneous Functions and Scaling paragraph (2-3 citations)
-% - [  ] Write Radial/Angular Decompositions paragraph (2-3 citations)
-% ==============================================================================
-
-\section{Related Work}
-\label{sec:related}
-
-% TODO: Write paragraph on EVT in ML
-\paragraph{Extreme Value Theory in Machine Learning.}
-The fields of Extreme Value Theory and Machine Learning are increasingly being considered together, with the goal of combining two superficially incompatible topics in data-driven analysis: machine learning methods rely on large datasets whilst EVT is primarily concerned with the data-sparse regions in the tails of distributions. Recent works such as \cite{Lafon_2023}, \cite{Allouche_2026}, \cite{Monte_2025}... use unsupervised learning techniques from the machine learning community alongside EVT principles to conduct generative modelling of multivariate extremes. 
-
-However little attention has been given to (nonlinear) dimension reduction. 
-
-Linear dimension reduction has been studied by...
-
-
-
-TODO: Discuss existing EVT applications in ML. Include:
-\begin{itemize}
-    \item Existing EVT methods (tail modeling, extreme quantiles)
-    \item Applications (anomaly detection, risk assessment)
-    \item Gap: no dimensionality reduction preserving tail structure
-    \item Citations: [TODO: add 3-5 papers on EVT in ML]
-\end{itemize}
-
-% TODO: Write paragraph on manifold learning
-\paragraph{Manifold Learning and Autoencoders.}
-TODO: Discuss representation learning for manifolds. Include:
-\begin{itemize}
-    \item Standard autoencoders, VAEs, \(\beta\)-VAEs
-    \item Geometric deep learning (hyperbolic, spherical embeddings)
-    \item Manifold learning methods (Isomap, LLE, etc.)
-    \item Limitation: none preserve heavy-tailed structure
-    \item Citations: [TODO: add 5-8 papers on autoencoders and manifold learning]
-\end{itemize}
-
-% TODO: Write paragraph on homogeneous functions
-\paragraph{Homogeneous Functions and Scaling.}
-TODO: Discuss role of homogeneity in EVT and representation learning. Include:
-\begin{itemize}
-    \item Regular variation and homogeneity (Resnick, de Haan \& Ferreira)
-    \item Scale-invariant representations
-    \item Our contribution: learning homogeneous maps for tail preservation
-    \item Citations: [TODO: add 2-3 EVT theory papers]
-\end{itemize}
-
-% TODO: Write paragraph on radial/angular decompositions
-\paragraph{Radial and Angular Decompositions.}
-TODO: Discuss related geometric decompositions. Include:
-\begin{itemize}
-    \item Radial basis functions, polar coordinates
-    \item Star-shaped parameterizations, radial graphs
-    \item Our contribution: adaptive asymptotic behavior via sparsity
-    \item Citations: [TODO: add 2-3 papers on radial parameterizations]
-\end{itemize}
-
-% ==============================================================================
-% SECTION 3: PROBLEM SETUP AND PRELIMINARIES
-% ==============================================================================
-% TODO LIST FOR THIS SECTION:
-% - [  ] Write data model paragraph (manifold M, regular variation)
-% - [  ] Write goal paragraph (encoder/decoder, requirements)
-% - [  ] Write key constraint paragraph (homogeneity for tail preservation)
-% - [  ] Add notation table if needed
-% ==============================================================================
-
-\section{Problem Setup and Preliminaries}
-\label{sec:setup}
-
-% TODO: Write data model paragraph
-\paragraph{Data Model.}
-
-TODO: Describe the data distribution and manifold structure. Include:
-\begin{itemize}
-    \item Data \(X \in \cM \subset \RR^D\) where \(\cM\) is a smooth \(m\)-dimensional manifold
-    \item Regular variation: \(t P(X/t \in A) \to \mu(A)\) as \(t \to \infty\)
-    \item Tail measure \(\mu\) encodes extreme behavior
-    \item Example: Pareto-distributed radius with uniform angular component
-\end{itemize}
-
-% TODO: Write goal paragraph
-\paragraph{Learning Goal.}
-TODO: State the learning problem precisely. Include:
-\begin{itemize}
-    \item Learn encoder \(f: \RR^D \to \RR^m\) and decoder \(g: \RR^m \to \RR^D\)
-    \item Requirements:
-    \begin{enumerate}[label=(\roman*)]
-        \item \textbf{Tail preservation}: latent tail measure \(\mu_W = f_* \mu_X\) (pushforward)
-        \item \textbf{Reconstruction}: \(\norm{X - g(f(X))}\) small on manifold
-        \item \textbf{Generation}: sample from tail in latent space, decode faithfully to extremes
-    \end{enumerate}
-    \item Challenge: simultaneous dimensionality reduction and tail preservation
-\end{itemize}
-
-% TODO: Write key constraint paragraph
-\paragraph{Key Constraint: Encoder Homogeneity.}
-TODO: Explain why homogeneity is necessary. Include:
-\begin{itemize}
-    \item Encoder must be \(p\)-homogeneous: \(f(\lambda x) = \lambda^p f(x)\)
-    \item \textbf{Theorem} (from EVT): If \(X\) is regularly varying and \(f\) is \(p\)-homogeneous, then \(W = f(X)\) is regularly varying with \(\mu_W = f_* \mu_X\)
-    \item Implication: can perform EVT analysis in latent space \(\RR^m\)
-    \item This constraint motivates our architectural design
-\end{itemize}
-
-% TODO: Add notation table if space allows
-% \paragraph{Notation.}
-% [Optional: table of key notation if space allows]
-
-% ==============================================================================
-% SECTION 4: METHOD - HOMOGENEOUS AUTOENCODERS
-% ==============================================================================
-% TODO LIST FOR THIS SECTION:
-% - [  ] Write encoder architecture subsection (decomposition, implementation, homogeneity proof)
-% - [  ] Write decoder challenge subsection (problem statement, why homogeneity is hard)
-% - [  ] Write three-component decoder subsection (architecture, forward pass, sparsity, intuition)
-% - [  ] Add architecture diagram (Figure 1 or 2)
-% - [  ] Add pseudocode for forward pass
-% ==============================================================================
-
-TODO: CHECK THIS SECTION
-\section{Method: Homogeneous Autoencoders}
-\label{sec:method}
-
-We now introduce the proposed autoencoder architecture. The design separates the roles of encoding and decoding. The encoder is constrained to be exactly \(p\)-homogeneous, so that latent regular variation follows from \Cref{prop:...}. The decoder is allowed to be non-homogeneous at moderate scales in order to be able to reconstruct curved manifold geometry, but is structured so that its non-homogeneous component is incentivised to be negligible in the tail, retaining asymptotic homogeneity and compatibility with transport of regular variation from latent to ambient spaces.
-
-\subsection{Encoder: \texorpdfstring{\(p\)}{p}-Homogeneous Representation}
-\label{sec:method:encoder}
-
-Fix a centre \(c\in\RR^D\) and norm indices \(q_r,q_\pi\geq 1\). For \(x\neq c\), define
-\[
-r_c(x):=\norm{x-c}_{q_r},
-\qquad
-\pi_c(x):=\frac{x-c}{\norm{x-c}_{q_\pi}}\in \mathbb{S}^{D-1}_{q_\pi},
-\]
-where
-\[
-\mathbb{S}^{D-1}_{q_\pi}:=\{u\in\RR^D:\norm{u}_{q_\pi}=1\}.
-\]
-Thus \(r_c\) is the radial variable used for scaling, while \(\pi_c\) is the angular projection used to parameterise direction.
-
-We define the encoder by
-\[
-f(x)=r_c(x)^p\, g(\pi_c(x)),
-\qquad x\neq c,
-\]
-where
-\[
-g:\mathbb{S}^{D-1}_{q_\pi}\to\RR^m
-\]
-is a measurable angular map. This form separates radial and angular information: the radial contribution enters only through \(r_c(x)^p\), whereas all directional variation is captured by \(g(\pi_c(x))\).
-
-A convenient further decomposition is
-\[
-g(u)=a(u)e(u),
-\]
-where
-\[
-a(u):=\norm{g(u)}_2\in(0,\infty),
-\qquad
-e(u):=\frac{g(u)}{\norm{g(u)}_2}\in\mathbb{S}^{m-1}.
-\]
-Hence, whenever \(g(u)\neq 0\),
-\[
-f(x)=r_c(x)^p\, a(\pi_c(x))\, e(\pi_c(x)).
-\]
-This introduces no additional restriction beyond nonvanishing of \(g\); it is simply the polar decomposition of the latent angular map \(g\) into a scalar magnitude term and a directional term.
-
-In implementation, we parameterize \(g\) either directly or via
-\[
-e(u)=\frac{E_{\mathrm{ang}}(u)}{\norm{E_{\mathrm{ang}}(u)}_2},
-\qquad
-a(u)=\mathrm{softplus}\!\bigl(E_{\mathrm{mag}}(u)\bigr),
-\]
-with neural networks
-\[
-E_{\mathrm{ang}}:\mathbb{S}^{D-1}_{q_\pi}\to\RR^m,
-\qquad
-E_{\mathrm{mag}}:\mathbb{S}^{D-1}_{q_\pi}\to\RR.
-\]
-
-The encoder is exactly \(p\)-homogeneous relative to the centre \(c\).
-
-\begin{lemma}
-\label{lem:encoder-homogeneous}
-Assume that the angular projection \(\pi_c\) is scale-invariant along rays through \(c\), i.e.
-\[
-\pi_c(c+\lambda(x-c))=\pi_c(x),
-\qquad x\neq c,\ \lambda>0.
-\]
-Then, for every \(x\neq c\) and every \(\lambda>0\),
-\[
-f\bigl(c+\lambda(x-c)\bigr)=\lambda^p f(x).
-\]
-In particular, when \(c=0\),
-\[
-f(\lambda x)=\lambda^p f(x),\qquad \lambda>0.
-\]
-\end{lemma}
-
-\begin{proof}
-For \(x\neq c\) and \(\lambda>0\),
-\[
-r_c(c+\lambda(x-c))=\lambda r_c(x)
-\]
-by homogeneity of the norm \(\norm{\cdot}_{q_r}\), and by assumption,
-\[
-\pi_c(c+\lambda(x-c))=\pi_c(x).
+f(\theta)=g(\theta)
+\qquad\text{and}\qquad
+f(\theta)=\tilde g(\theta).
 \]
 Therefore
 \[
-f\bigl(c+\lambda(x-c)\bigr)
-=
-r_c(c+\lambda(x-c))^p\, g(\pi_c(c+\lambda(x-c)))
-=
-\lambda^p r_c(x)^p g(\pi_c(x))
-=
-\lambda^p f(x).
+g(\theta)=\tilde g(\theta)
+\qquad
+\text{for every } \theta \in \mathbb{S}^{D-1}_q.
 \]
+Since \(g\) and \(\tilde g\) have the same domain
+\(\mathbb{S}^{D-1}_q\), they agree at every point of that domain, and hence
+\(g=\tilde g\).
 \end{proof}
 
-By \Cref{prop:...}, this implies that if \(X\) is regularly varying and the remaining hypotheses there hold, then \(Z=f(X)\) is regularly varying with tail measure \(f_{\#}\mu\) and tail index \(\alpha/p\).
+\begin{remark}
+The proposition shows that, for a given norm
+\(\|\cdot\|_q\), a positively homogeneous map is completely determined by its
+restriction to the \(q\)-sphere: the scaling behaviour is prescribed \(\|x\|_q^p\), and all remaining structure is represented by the
+angular component \(g\).
+\end{remark}
 
-\subsection{Decoder: Adaptive Asymptotic Homogeneity}
-\label{sec:method:decoder}
-
-Write the latent variable in polar form as
+A corollary of \ref{prop:canonical-homogeneous-form} is that, on the subset
 \[
-z=\rho(z)\theta(z),
-\qquad
-\rho(z):=\norm{z}_2,
-\qquad
-\theta(z):=\frac{z}{\norm{z}_2}\in\mathbb{S}^{m-1}.
+\{\theta \in \mathbb{S}^{D-1}_q : g(\theta) \neq 0\},
 \]
-Since the encoder scales ambient radius through \(r_c^p\), the decoder inverts this radial transformation through \(\rho^{1/p}\).
-
-We define the decoder using three components:
+one may further decompose \(g\) into magnitude and direction:
 \[
-c_{\mathrm{hom}}:\mathbb{S}^{m-1}\to\RR^D,
+g(\theta) = a(\theta)e(\theta),
 \qquad
-b:\mathbb{S}^{m-1}\to(0,\infty),
+a(\theta) := \|g(\theta)\|_{q},
 \qquad
-c_{\mathrm{cor}}:\mathbb{S}^{m-1}\times\RR\to\RR^D.
+e(\theta) := \frac{g(\theta)}{\|g(\theta)\|_{q}} \in \mathbb{S}^{m-1}.
 \]
-Here \(c_{\mathrm{hom}}\) is the homogeneous angular component, \(b\) is an angle-dependent magnitude term, and \(c_{\mathrm{cor}}\) is a non-homogeneous correction. The function \(b\) depends only on latent angle and is the decoder analogue of the encoder-side magnitude modulation.
+where $q$ need not be equal to $q$.
 
-The decoder is
+Thus, for every \(x \in \mathbb{O}_D\) such that
+\(g(x/\|x\|_{q}) \neq 0\), we always have the decomposition
+\[
+f(x)
+=
+\|x\|_{q}^p\,
+a\!\left(\frac{x}{\|x\|_{q}}\right)
+e\!\left(\frac{x}{\|x\|_{q}}\right).
+\]
+
+
+Under this representation, $a$ can be intuitively considered as an ``angle-dependent scaling factor'', $e$ an ``angle-map'' and $\|x\|_q^p$ a purely radial scaling term. 
+
+[TODO: CHECK THIS, PRETTY SURE IT'S TRUE] More generally, the same argument applies whenever one replaces
+\(\|x\|_q\) by a positive radial function \(r : \mathbb{O}_D \to (0,\infty)\)
+satisfying
+\[
+r(\lambda x) = \lambda r(x),
+\qquad x \in \mathbb{O}_D,\ \lambda > 0,
+\]
+and uses an associated normalisation \(x \mapsto x/r(x)\).
+
+\section{Method: Homogeneous Autoencoders}
+\label{sec:method}
+
+We now specify the proposed autoencoder architecture. The design separates the roles of encoding and decoding.  The preceding subsection shows that every positively homogeneous map admits a radial--angular factorisation. We therefore parameterise the encoder directly in this form, so that $p$-homogeneity and thus the preservation of tail properties as the nondegenerate pushforward of the regularly-varying tail measure are enforced by construction. The decoder is allowed to deviate from homogeneity at moderate scales in order to reconstruct curved manifold geometry, but is regularized so that this deviation becomes negligible in the tail, where consistent scaling matters most. 
+
+\subsection{Encoder architecture}
+\label{sec:encoder-architecture}
+
+By \Cref{prop:canonical-homogeneous-form}, every positively homogeneous map \(f:\mathbb{O}_D\to\mathbb{R}^m\) of degree \(p\) can be written in the form
+\[
+f(x)=\|x\|_q^p\,g\!\left(\frac{x}{\|x\|_q}\right),
+\qquad x\in\mathbb{O}_D,
+\]
+for a unique angular map \(g:\mathbb{S}^{D-1}_q\to\mathbb{R}^m\). We therefore need only parameterise the angular component of the encoder.
+
+Also, whenever \(g(\theta)\neq 0\), we further write
+\[
+g(\theta)=a(\theta)e(\theta),
+\qquad
+a(\theta):=\|g(\theta)\|_{q},
+\qquad
+e(\theta):=\frac{g(\theta)}{\|g(\theta)\|_{q}}\in\mathbb{S}^{m-1}_{q},
+\]
+where \(q\in[1,\infty]\) is a latent-space norm exponent. The encoder then takes the form
+\[
+f(x)
+=
+\|x\|_q^p\,
+a\!\left(\frac{x}{\|x\|_q}\right)
+e\!\left(\frac{x}{\|x\|_q}\right).
+\]
+Here \(\|x\|_q^p\) is the homogeneous radial term, \(a\) is an angle-dependent scaling, and \(e\) is an angular map from the ambient sphere to the latent sphere. This secondary decomposition, whilst theoretically serving only a limited role, is helpful for practical model training purposes such as diagnostics, regularisation and visualisation.
+
+For implementation, \(a\) and \(e\) are represented by neural networks on \(\mathbb{S}^{D-1}_q\):
+\[
+a(\theta)=\mathrm{softplus}\!\bigl(A_\phi(\theta)\bigr),
+\qquad
+e(\theta)=\frac{E_\phi(\theta)}{\|E_\phi(\theta)\|_{q}},
+\]
+where
+\[
+A_\phi:\mathbb{S}^{D-1}_q\to(0,\infty),
+\qquad
+E_\phi:\mathbb{S}^{D-1}_q\to\mathbb{R}^m.
+\]
+The softplus nonlinearity enforces positivity of \(a\), and normalisation enforces \(e(\theta)\in\mathbb{S}^{m-1}_{q}\). By construction, the resulting encoder is exactly positively homogeneous of degree \(p\). The importance of this formulation is that homogeneity of the encoder is not imposed by penalty or approximation but is ensured via the architectural setup. Then, by \Cref{prop:reg-variation-under-homogeneous-encoders} the latent representation
+\[
+Z=f(X)
+\]
+is regularly varying with tail measure \(f_{\#}\mu\) and tail index \(\alpha/p\).
+
+\subsection{Decoder architecture}
+\label{sec:decoder-architecture}
+
+In order to return to ambient space, the decoder must invert the latent radial scaling of the encoder while still reconstructing an ambient manifold that need not, in general, be globally homogeneous. To achieve this, we retain a homogeneous leading term and introduce a non-homogeneous correction acting  on the decoded direction. The correction is parameterised so that the decoder remains flexible at finite scales, while retaining homogeneity in the radial limit.
+
+Writing the latent variable in polar form as
+\[
+z=\rho\,\eta,
+\qquad
+\rho:=\|z\|_{q},
+\qquad
+\eta:=\frac{z}{\|z\|_{q}}\in\mathbb{S}^{m-1}_{q},
+\]
+the encoder scales ambient radius by the power \(p\), so the decoder inverts this through the factor \(\rho^{1/p}\). We first define the homogeneous decoder
+\[
+h_{\mathrm{hom}}(z)
+=
+\rho^{1/p}\,\tilde a(\eta)\,\tilde e(\eta), \qquad \tilde e:\mathbb{S}^{m-1}_{q}\to \mathbb{S}^{D-1}_{q}, \qquad \tilde a:\mathbb{S}^{m-1}_{q}\to (0,\infty),
+\]
+with angular map \(\tilde e\) and decoder-side magnitude term \(\tilde a\). This is the natural inverse analogue of the encoder parameterisation $f(x)=\|x\|_q^p\,a(\theta)\,e(\theta)$.
+
+Whilst \(h_{\mathrm{hom}}\) suffices for homogeneous or cone-like manifolds, one must forgo global homogeneity of the decoder in order to represent more general smooth curved manifolds. To this end, we introduce a radius-dependent angular correction. Let
+\[
+\delta:\mathbb{S}^{m-1}_{q}\times(0,\infty)\to \mathbb{R}^D
+\]
+denote the correction term [TODO: could equivalently be parameterised by the full latent coordinate \(z\), but the radial--angular form is perhaps more intuitive for interpretation and analysis]. We define the corrected decoded angle
+\[
+\tilde c(\eta,\rho)
+:=
+\frac{\tilde e(\eta)+\delta(\eta,\rho)}
+{\bigl\|\tilde e(\eta)+\delta(\eta,\rho)\bigr\|_q}
+\in \mathbb{S}^{D-1}_{q},
+\]
+which is well-defined provided \(\|\tilde e(\eta)+\delta(\eta,\rho)\|_q\neq0\). 
+The full decoder is then
 \[
 h(z)
 =
-c+\rho(z)^{1/p}
-\Bigl(
-b(\theta(z))\,c_{\mathrm{hom}}(\theta(z))
-+
-c_{\mathrm{cor}}(\theta(z),\log \rho(z))
-\Bigr).
-\]
-The correction is added at the end. Thus the homogeneous structure is explicit, while the non-homogeneous component enters as an additive perturbation.
-
-In implementation, we use
-\[
-c_{\mathrm{hom}}(\theta)
-=
-\frac{H_{\mathrm{hom}}(\theta)}{\norm{H_{\mathrm{hom}}(\theta)}_2},
+\rho^{1/p}\,\tilde a(\eta)\,\tilde c(\eta,\rho),
 \qquad
-b(\theta)=\mathrm{softplus}\!\bigl(H_{\mathrm{mag}}(\theta)\bigr),
-\qquad
-c_{\mathrm{cor}}(\theta,\log\rho)=H_{\mathrm{cor}}(\theta,\log\rho),
-\]
-with
-\[
-H_{\mathrm{hom}}:\mathbb{S}^{m-1}\to\RR^D,
-\qquad
-H_{\mathrm{mag}}:\mathbb{S}^{m-1}\to\RR,
-\qquad
-H_{\mathrm{cor}}:\mathbb{S}^{m-1}\times\RR\to\RR^D.
+z\in\mathbb{R}^m\setminus\{0\}.
 \]
 
-The decoder is trained jointly with the encoder using reconstruction loss plus a radius-weighted sparsity penalty on the correction term. For \(z=f(x)\), we use
+If \(\delta\equiv 0\), then \(\tilde c(\eta,\rho)=\tilde e(\eta)\) for all \((\eta,\rho)\), and the decoder reduces to the positively homogeneous case \(h_{\mathrm{hom}}(z)\) of degree \(1/p\). More generally, the relevant asymptotic requirement is that the decoded direction become independent of latent radius in the tail [TODO: maybe formalise this a bit]:
 \[
-\mathcal{L}(x)
+\tilde c(\eta,\rho)\to \tilde e(\eta)
+\qquad\text{as }\rho\to\infty
+\]
+[in a suitable sense; e.g. pointwise or uniformly in \(\eta\)]. Note that this is equivalent to
+\[
+\delta(\eta,\rho)\to 0
+\qquad\text{as }\rho\to\infty,
+\]
+since then the angular correction vanishes and the decoded direction becomes asymptotically homogeneous. [TODO: maybe formalise this a bit]
+
+A convenient way of implementing such a $\delta$ with the desired properties is to undertake the following construction. To begin, transform the radial variable via
+\[
+s(\rho):=\frac{1}{1+\rho}\in(0,1),
+\]
+so that the limit \(\rho\to\infty\) is the boundary point \(s=0\). Then, let
+\[
+\Delta_\psi:\mathbb{S}^{m-1}_{q}\times[0,1]\to \mathbb{R}^D
+\]
+be a continuous neural network and define
+\[
+\delta(\eta,\rho)
+:=
+\Delta_\psi\bigl(\eta,s(\rho)\bigr)-\Delta_\psi(\eta,0).
+\]
+Since \(s(\rho)\to 0\) as \(\rho\to\infty\) and \(\Delta_\psi\) is continuous on the compact set \(\mathbb{S}^{m-1}_{q}\times[0,1]\), by the uniform continuity theorem we have
+\[
+\sup_{\eta\in\mathbb{S}^{m-1}_{q}}\|\delta(\eta,\rho)\|\to 0
+\qquad\text{as }\rho\to\infty.
+\]
+the angular correction vanishes in the radial limit, ensuring asymptotic homogeneity of the decoder. 
+
+Via this construction, asymptotic homogeneity is built into the architecture, while finite-scale non-homogeneous geometry is still expressible via variation in \(\Delta_\psi(\eta,s)\) over \(s\in(0,1)\). [TODO: later discuss explicitly the extent to which arbitrary smooth curved manifolds can be approximated]
+
+To parameterise the full decoder in practice, we use
+\[
+\tilde a(\eta)=\mathrm{softplus}\!\bigl(A_\psi(\eta)\bigr),
+\qquad
+\tilde e(\eta)=\frac{E_\psi(\eta)}{\|E_\psi(\eta)\|_q},
+\qquad
+\delta(\eta,\rho)=\Delta_\psi\bigl(\eta,s(\rho)\bigr)-\Delta_\psi(\eta,0),
+\]
+with neural networks
+\[
+A_\psi:\mathbb{S}^{m-1}_{q}\to \mathbb{R},
+\qquad
+E_\psi:\mathbb{S}^{m-1}_{q}\to \mathbb{R}^D,
+\qquad
+\Delta_\psi:\mathbb{S}^{m-1}_{q}\times[0,1]\to \mathbb{R}^D.
+\]
+
+\begin{remark}[Tail preservation under asymptotically homogeneous decoding]
+[TODO: FORMALISE INTO THEOREM?] The key property of this decoder construction is that it preserves the tail behavior established by the encoder. Since the latent representation \(Z=f(X)\) is regularly varying with tail measure \(f_{\#}\mu\) (by \Cref{prop:reg-variation-under-homogeneous-encoders}), and the decoder converges to a homogeneous map \(h_{\mathrm{hom}}\) as \(\rho\to\infty\), the reconstructed variable \(\hat X = h(Z)\) should also be regularly varying with tail measure determined by the pushforward of \(f_{\#}\mu\) through \(h_{\mathrm{hom}}\)???. A rigorous statement might require showing that the asymptotic correction \(\delta(\eta,\rho)\to 0\) is sufficiently fast (uniformly in \(\eta\)) to ensure tail equivalence between \(h(Z)\) and \(h_{\mathrm{hom}}(Z)\). This might be supported by the compactness of \(\mathbb{S}^{m-1}_{q}\times[0,1]\) and continuity of \(\Delta_\psi\), which together imply uniform convergence of \(\delta\).
+\end{remark}
+
+\subsection{Training objective}
+\label{sec:training-objective}
+
+Let \(\hat X = h(f(X))\) denote the reconstruction of \(X\). The encoder and decoder are trained jointly using a reconstruction loss together with a radius-weighted penalty on the angular correction term to incentivise the decoder to revert to homogeneity where possible. Fix a norm
+\[
+\|\cdot\|_{\mathrm{pen}}
+\]
+on \(\mathbb{R}^D\), let
+\[
+\omega:\mathbb{R}^D\to(0,\infty)
+\]
+be a weight function, typically assigning (weakly) greater losses to deviations from homogeneity at larger radial scales. We then define the per-sample objective by
+\[
+\mathcal{L}(X)
 =
-\mathcal{L}_{\mathrm{recon}}\!\bigl(x,h(f(x))\bigr)
+\mathcal{L}_{\mathrm{recon}}(X,\hat X)
 +
 \lambda_{\mathrm{cor}}\,
-\rho(f(x))\,
-\norm{c_{\mathrm{cor}}(\theta(f(x)),\log \rho(f(x)))}_1.
+\omega(X)\,
+\bigl\|
+\delta(\eta,\rho)
+\bigr\|_{\mathrm{pen}},
 \]
-The factor \(\rho(f(x))\) increases the cost of non-homogeneous corrections at large latent radii. Consequently, the decoder is encouraged to use the correction term at moderate scales, where it improves reconstruction, and suppress it in the tail, where asymptotic homogeneity is preferred.
+where the argument to $\omega(\cdot)$ could also be a function of $X$ (such as $Z$ or $\hat{X}$), representing some notion of scale. The exact choice of $\omega$ is dependent upon the geometry of the manifold being modelled: if the manifold is highly curved at large radial scales, we want don't want $\omega$ to create a large loss when the network tries to (correctly) deviate from homogeneity. Alternatively, if the manifold being modelled is homogeneous from a relatively small radial distance onward, one would want $\omega$ to increase quickly to harshly punish (erroneous) deviations from homogeneity at larger radial scales. [TODO: rewrite this section in a more intuitive way - how much generality do I want to propose this in in the paper]. A simple choice of $\omega$ used in our implementation is $\omega=\log(1+\|.\|_q)$.[TODO: decide whether this should be the ambient radius, the latent radius, or another equivalent quantity].
 
-This is the basic mechanism of adaptive asymptotic homogeneity: local geometric flexibility is carried by \(c_{\mathrm{cor}}\), while tail behaviour is controlled by the homogeneous component \(b(\theta)c_{\mathrm{hom}}(\theta)\).
-% TODO: Write encoder subsection
-\subsection{Encoder: \texorpdfstring{\(p\)}{p}-Homogeneity}
-\label{sec:method:encoder}
+Breaking down the loss, the first term denotes a typical reconstruction loss (e.g., $L_2$ norm) while the second penalises departures from the homogeneous angular decoder, potentially with a weight increasing in scale. The decoder is therefore encouraged to use the non-homogeneous term only where it materially improves reconstruction, while defaulting to the homogeneous mechanism whenever possible. The weight $\lambda_\mathrm{cor}$ dictates the balance between these two terms. 
 
-% TODO: Write decomposition paragraph
-\paragraph{Product-Form Decomposition.}
-TODO: Explain encoder construction. Include:
-\begin{itemize}
-    \item Decompose \(x = c + r \cdot u\) where \(r = \norm{x - c}_2\) and \(u = (x - c)/r \in \mathbb{S}^{D-1}\)
-    \item Product form: \(w = r^p \cdot a(u) \cdot e(u)\) where:
-    \begin{itemize}
-        \item \(e(u): \mathbb{S}^{D-1} \to \mathbb{S}^{m-1}\) (angular encoding, normalized to sphere)
-        \item \(a(u): \mathbb{S}^{D-1} \to \RR^+\) (magnitude scaling, bounded on compact domain)
-    \end{itemize}
-    \item Latent \(w \in \RR^m\) with polar structure: \(r_w = \norm{w}\), \(\theta = w/\norm{w} \in \mathbb{S}^{m-1}\)
-\end{itemize}
+This results in the intended adaptive asymptotic homogeneity. At moderate scales, the correction term can capture finite-scale curvature and other departures from homogeneous geometry. At large scales, the architectural condition \(\delta(\eta,\rho)\to 0\) suppresses the influence of the correction term, while the radius-weighted penalty discourages unnecessarily large corrections at finite scales. At large radial scales,
+\[
+\tilde c(\eta,\rho)\approx \tilde e(\eta),
+\]
+and the decoder is governed primarily by its homogeneous component. Reconstruction therefore remains compatible with the tail behaviour induced by the encoder.
 
-% TODO: Write implementation paragraph
-\paragraph{Implementation.}
-TODO: Describe neural architecture. Include:
-\begin{itemize}
-    \item Two MLPs: \texttt{encoder\_angular} (\(\mathbb{S}^{D-1} \to \RR^m\), then normalize) and \texttt{encoder\_magnitude} (\(\mathbb{S}^{D-1} \to \RR^+\), apply softplus)
-    \item Forward pass: \(e = \text{normalize}(\text{MLP}_e(u))\), \(a = \text{softplus}(\text{MLP}_a(u))\), \(w = r^p \cdot a \cdot e\)
-    \item Center \(c\) is fixed (could be learned, currently origin or data center)
-\end{itemize}
+% \subsection{Summary of the architecture}
+% \label{sec:method-summary}
 
-% TODO: Write homogeneity proof
-\paragraph{Homogeneity and Tail Preservation.}
-TODO: Prove encoder is \(p\)-homogeneous. Include:
-\begin{itemize}
-    \item For \(\lambda > 0\): \(u(\lambda x) = u(x)\) (direction unchanged), \(r(\lambda x) = \lambda r(x)\)
-    \item Therefore: \(\text{encode}(\lambda x) = (\lambda r)^p \cdot a(u) \cdot e(u) = \lambda^p \cdot \text{encode}(x)\)
-    \item \textbf{Consequence}: Tail measure preserved via pushforward: \(\mu_W = \text{encode}_* \mu_X\)
-    \item This enables EVT analysis in latent space
-\end{itemize}
+% The proposed model is therefore characterized by two structural constraints:
+% \begin{enumerate}
+%     \item the encoder is exactly positively homogeneous of degree \(p\), ensuring explicit transport of regular variation to latent space;
+%     \item the decoder is a homogeneous leading map plus a sparsity-regularized correction, allowing geometric flexibility at finite scales while retaining asymptotic homogeneity in the tail.
+% \end{enumerate}
+% This asymmetric treatment of encoder and decoder is central to the method: exact scaling control is needed to preserve latent tail structure, whereas only asymptotic scaling control is needed for reconstruction.
 
-% TODO: Write decoder challenge subsection
-\subsection{Decoder Challenge: Topological Collapse}
-\label{sec:method:decoder-challenge}
 
-% TODO: Write problem statement
-\paragraph{The Problem.}
-TODO: Explain decoder difficulty. Include:
-\begin{itemize}
-    \item Latent \(w \in \RR^m\) has \(m\) degrees of freedom: radius \(r_w = \norm{w}\) and angle \(\theta = w/\norm{w} \in \mathbb{S}^{m-1}\)
-    \item Manifold \(\cM\) has dimension \(m\) (same!)
-    \item Na\"ive decoder \(c(\theta): \mathbb{S}^{m-1} \to \mathbb{S}^{D-1}\) uses only \((m-1)\) DoF (angle)
-    \item Result: decoder output collapses to \((m-1)\)-dimensional curve, cannot span \(m\)-dimensional manifold
-\end{itemize}
 
-% TODO: Write why homogeneity is hard
-\paragraph{Why Homogeneity is Hard for Decoders.}
-TODO: Explain the fundamental tension. Include:
-\begin{itemize}
-    \item Ideally: \(\text{decode}(\lambda^p w) = \lambda \cdot \text{decode}(w)\) for faithful generation from tail
-    \item But: manifolds are not necessarily homogeneous everywhere (complex local structure)
-    \item Encoder can be locally homogeneous (radial projection well-defined off-manifold)
-    \item Decoder cannot: scaling in latent space must map to manifold, which may not be cone-like locally
-    \item Solution: \emph{adaptive asymptotic homogeneity} via sparsity regularization
-\end{itemize}
+% % TODO: Write 2-3 paragraphs on motivation
+% % Content to include:
+% % - Heavy-tailed data is ubiquitous (finance, climate, networks, anomalies)
+% % - Extreme value analysis needs to be done, but data is high-dimensional
+% % - Dimensionality reduction is necessary, but standard methods don't preserve tail structure
+% % - Example: financial crisis analysis requires understanding tail behavior in latent space
+% \paragraph{Motivation.}
+% TODO: Write compelling motivation for tail-preserving dimensionality reduction. Include:
+% \begin{itemize}
+%     \item Why heavy-tailed data matters (finance, climate, networks)
+%     \item Need for dimensionality reduction in EVT
+%     \item Failure of standard autoencoders to preserve tail structure
+%     \item Concrete example or application
+% \end{itemize}
 
-% TODO: Write three-component decoder subsection
-\subsection{Three-Component Decoder with Adaptive Homogeneity}
-\label{sec:method:decoder}
+% % TODO: Problem statement paragraph
+% % Content: What are we trying to learn? Input/output, constraints, objectives
+% \paragraph{Problem statement.}
+% TODO: Clearly state the learning problem. Should include:
+% \begin{itemize}
+%     \item Input: Data X on manifold \(\cM \subset \RR^D\) with regularly varying distribution
+%     \item Goal: Learn encoder \(f: \RR^D \to \RR^m\) (with \(m < D\)) that:
+%     \begin{enumerate}
+%         \item Preserves tail measure (for EVT in latent space)
+%         \item Allows faithful reconstruction
+%         \item Enables generation of extreme values
+%     \end{enumerate}
 
-% TODO: Write architecture overview
-\paragraph{Architecture Overview.}
-TODO: Describe three-component structure. Include:
-\begin{enumerate}
-    \item \(c_{\text{base}}(\theta): \mathbb{S}^{m-1} \to \mathbb{S}^{D-1}\) --- homogeneous baseline angular component
-    \item \(c_{\text{correction}}(\theta, \log r_w): \mathbb{S}^{m-1} \times \RR \to \RR^D\) --- sparse non-homogeneous correction
-    \item \(b(\theta): \mathbb{S}^{m-1} \to \RR^+\) --- bounded angle-dependent radius scaling
-\end{enumerate}
-Key insight: separate homogeneous baseline from non-homogeneous correction, penalize correction to drive asymptotic homogeneity.
+% \end{itemize}
 
-% TODO: Write forward pass
-\paragraph{Forward Pass.}
-TODO: Describe decoding procedure. Include pseudocode:
-\begin{verbatim}
-r_w = ||w||
-theta = w / ||w||  (angle in latent space)
-r_reconstructed = r_w^(1/p)  (invert encoder's r^p)
+% % TODO: Why existing approaches fail
+% \paragraph{Challenges.}
+% TODO: Explain why this is hard and why standard methods fail. Include:
+% \begin{itemize}
+%     \item Standard autoencoders: no homogeneity → tail structure not preserved
+%     \item Homogeneous maps alone: cannot handle non-homogeneous manifolds
+%     \item Local vs asymptotic homogeneity: manifolds may be complex locally but cone-like in tail
+%     \item Need for adaptive mechanism
+% \end{itemize}
 
-c_base = normalize(MLP_base(theta))  (homogeneous baseline)
-c_correction = MLP_correction([theta, log(r_w)])  (non-homogeneous)
-c = normalize(c_base + c_correction)  (combined direction)
+% % TODO: Our approach paragraph
+% \paragraph{Our approach.}
+% TODO: Describe our solution at high level (save details for Method section). Include:
+% \begin{itemize}
+%     \item Encoder: exactly \(p\)-homogeneous via product form \(w = r^p \cdot g(u)\)
+%     \item Decoder: three components with adaptive homogeneity
+%     \item Key innovation: sparsity-regularized correction term
+%     \item Intuition: be flexible locally, homogeneous in tail
+% \end{itemize}
 
-b = softplus(MLP_magnitude(theta))  (bounded scaling)
-h = b * c  (final radial component)
-x_hat = center + r_reconstructed * h  (ambient reconstruction)
-\end{verbatim}
+% % TODO: Contributions list with quantitative claims where possible
+% \paragraph{Contributions.}
+% TODO: List contributions. For NeurIPS acceptance, should include:
+% \begin{enumerate}[leftmargin=1.5em]
+%     \item \textbf{Method}: Three-component decoder architecture with adaptive asymptotic homogeneity (Section~\ref{sec:method})
+%     \item \textbf{Theory}: Analysis of tail preservation under bounded scaling and sparsity (Section~\ref{sec:theory})
+%     \item \textbf{Experiments}: Validation on synthetic and real-world heavy-tailed data (Section~\ref{sec:experiments})
+%     \begin{itemize}
+%         \item TODO: Add quantitative claim (e.g., ``X\% improvement in tail index preservation'')
+%         \item TODO: Add claim about generation quality
+%     \end{itemize}
+%     \item \textbf{Insights}: When does the sparsity mechanism work? Connection to manifold geometry (Section~\ref{sec:discussion})
+%     \item \textbf{Code}: Open-source implementation TODO: add repo name/link
+% \end{enumerate}
 
-% TODO: Write sparsity regularization
-\paragraph{Sparsity Regularization.}
-TODO: Explain loss function and mechanism. Include:
-\begin{itemize}
-    \item Total loss: \(\cL = \cL_{\text{recon}} + \lambda_{\text{ang}} \cL_{\text{ang}} + \lambda_{\text{rad}} \cL_{\text{rad}} + \lambda_{\text{sparse}} \norm{c_{\text{correction}}}_1?*r_w?\)
-    \item L1 penalty on \(c_{\text{correction}}\) and weighted by r encourages sparsity (entries driven to zero when not needed)
-    \item Trade-off: reconstruction quality vs asymptotic homogeneity
-    \item Mechanism: when \(c_{\text{base}}\) alone suffices, correction is penalized to zero
-\end{itemize}
+% % ==============================================================================
+% % SECTION 2: BACKGROUND AND RELATED WORK
+% % ==============================================================================
+% % TODO LIST FOR THIS SECTION:
+% % - [  ] Write Extreme Value Theory in ML paragraph (3-5 citations)
+% % - [  ] Write Manifold Learning and Autoencoders paragraph (5-8 citations)
+% % - [  ] Write Homogeneous Functions and Scaling paragraph (2-3 citations)
+% % - [  ] Write Radial/Angular Decompositions paragraph (2-3 citations)
+% % ==============================================================================
 
-% TODO: Write intuition paragraph
-\paragraph{Intuition: Adaptive Homogeneity.}
-TODO: Explain how this solves the tension. Include:
-\begin{itemize}
-    \item \textbf{Near origin} (small \(r_w\)): manifold may have complex, non-homogeneous structure
-    \begin{itemize}
-        \item Reconstruction loss dominates sparsity penalty
-        \item \(c_{\text{correction}}\) can be non-zero to capture complexity
-        \item Decoder is locally flexible
-    \end{itemize}
-    \item \textbf{In tail} (large \(r_w\)): manifold becomes asymptotically cone-like (due to regular variation)
-    \begin{itemize}
-        \item \(c_{\text{base}}(\theta)\) alone captures structure
-        \item \(c_{\text{correction}}\) provides diminishing benefit
-        \item Sparsity penalty drives \(\norm{c_{\text{correction}}} \to 0\)
-        \item Decoder becomes effectively homogeneous: \(c \approx c_{\text{base}}(\theta)\)
-    \end{itemize}
-    \item Result: automatic adaptation to manifold geometry ADD NOTES ABOUT WEIGHTING BY RADIUS
-\end{itemize}
+% \section{Related Work}
+% \label{sec:related}
 
-% TODO: Add architecture diagram reference
-% [TODO: Add Figure 2 - Architecture diagram showing encoder/decoder components]
+% % TODO: Write paragraph on EVT in ML
+% \paragraph{Extreme Value Theory in Machine Learning.}
+% The fields of Extreme Value Theory and Machine Learning are increasingly being considered together, with the goal of combining two superficially incompatible topics in data-driven analysis: machine learning methods rely on large datasets whilst EVT is primarily concerned with the data-sparse regions in the tails of distributions. Recent works such as \cite{Lafon_2023}, \cite{Allouche_2026}, \cite{Monte_2025}... use unsupervised learning techniques from the machine learning community alongside EVT principles to conduct generative modelling of multivariate extremes. 
 
-% ==============================================================================
-% SECTION 5: THEORETICAL ANALYSIS
-% ==============================================================================
-% TODO LIST FOR THIS SECTION:
-% - [  ] Write encoder tail preservation theorem + proof sketch
-% - [  ] Write decoder tail index preservation proposition + analysis
-% - [  ] Write sparsity induces asymptotic homogeneity proposition + trade-off analysis
-% - [  ] Add brief connection to geometric theory (defer full theory to appendix)
-% ==============================================================================
+% However little attention has been given to (nonlinear) dimension reduction. 
 
-\section{Theoretical Analysis}
-\label{sec:theory}
+% Linear dimension reduction has been studied by...
 
-% TODO: State theorem
-\begin{theorem}[Encoder preserves tail measure]
-\label{thm:encoder-tail-preservation}
-Let \(X \in \RR^D\) be regularly varying with tail measure \(\mu_X\). If the encoder \(f: \RR^D \to \RR^m\) is \(p\)-homogeneous (i.e., \(f(\lambda x) = \lambda^p f(x)\) for all \(\lambda > 0\)), then \(W = f(X)\) is regularly varying with tail measure \(\mu_W = f_* \mu_X\) (the pushforward of \(\mu_X\)).
-\end{theorem}
 
-% TODO: Proof sketch
-\begin{proof}[Proof sketch]
-TODO: Provide proof sketch. Include:
-\begin{itemize}
-    \item Regular variation: \(t P(X/t \in A) \to \mu_X(A)\) as \(t \to \infty\)
-    \item Apply \(f\): \(t P(f(X)/t^p \in B) = t P(X/t \in f^{-1}(B)) \to \mu_X(f^{-1}(B))\)
-    \item Change of variables: \(s = t^p\), so \(s P(f(X)/s \in B) \to \mu_X(f^{-1}(B))\)
-    \item Define \(\mu_W(B) := \mu_X(f^{-1}(B))\), which is exactly the pushforward \(f_* \mu_X\)
-    \item Conclusion: EVT can be performed in latent space with tail measure exactly preserved
-\end{itemize}
-\end{proof}
 
-% TODO: Write decoder tail index preservation
-\subsection{Decoder: Tail Index Preservation via Bounded Scaling}
-\label{sec:theory:decoder}
+% TODO: Discuss existing EVT applications in ML. Include:
+% \begin{itemize}
+%     \item Existing EVT methods (tail modeling, extreme quantiles)
+%     \item Applications (anomaly detection, risk assessment)
+%     \item Gap: no dimensionality reduction preserving tail structure
+%     \item Citations: [TODO: add 3-5 papers on EVT in ML]
+% \end{itemize}
 
-% TODO: State proposition
-\begin{proposition}[Bounded scaling preserves tail index]
-\label{prop:bounded-scaling}
-Suppose the decoder magnitude component \(b: \mathbb{S}^{m-1} \to \RR^+\) is bounded: \(b_{\min} \le b(\theta) \le b_{\max}\) for all \(\theta \in \mathbb{S}^{m-1}\). Then for generated samples \(W_{\text{new}}\) from the tail distribution in latent space, the decoded samples \(\hat{X} = \text{decode}(W_{\text{new}})\) preserve the tail index.
-\end{proposition}
+% % TODO: Write paragraph on manifold learning
+% \paragraph{Manifold Learning and Autoencoders.}
+% TODO: Discuss representation learning for manifolds. Include:
+% \begin{itemize}
+%     \item Standard autoencoders, VAEs, \(\beta\)-VAEs
+%     \item Geometric deep learning (hyperbolic, spherical embeddings)
+%     \item Manifold learning methods (Isomap, LLE, etc.)
+%     \item Limitation: none preserve heavy-tailed structure
+%     \item Citations: [TODO: add 5-8 papers on autoencoders and manifold learning]
+% \end{itemize}
 
-% TODO: Analysis
-\begin{proof}[Analysis]
-TODO: Provide analysis. Include:
-\begin{itemize}
-    \item Decoder output: \(\hat{X} = c + r_w^{1/p} \cdot b(\theta) \cdot \hat{c}\) where \(\hat{c} \in \mathbb{S}^{D-1}\)
-    \item Radial component: \(\norm{\hat{X} - c} = r_w^{1/p} \cdot b(\theta) \cdot \norm{\hat{c}} = r_w^{1/p} \cdot b(\theta)\)
-    \item Bounded \(b\): \(b_{\min} \cdot r_w^{1/p} \le \norm{\hat{X} - c} \le b_{\max} \cdot r_w^{1/p}\)
-    \item Asymptotic behavior: \(\norm{\hat{X} - c} \sim r_w^{1/p}\) as \(r_w \to \infty\)
-    \item Tail index: if \(P(\norm{W} > s) \sim s^{-\alpha}\), then \(P(\norm{\hat{X}} > t) \sim P(r_w^{1/p} > t/b_{\max}) \sim (t/b_{\max})^{-\alpha p} = t^{-\alpha p}\)
-    \item Conclusion: tail index transformed by \(p\) (as expected from \(p\)-homogeneity)
-\end{itemize}
-\end{proof}
+% % TODO: Write paragraph on homogeneous functions
+% \paragraph{Homogeneous Functions and Scaling.}
+% TODO: Discuss role of homogeneity in EVT and representation learning. Include:
+% \begin{itemize}
+%     \item Regular variation and homogeneity (Resnick, de Haan \& Ferreira)
+%     \item Scale-invariant representations
+%     \item Our contribution: learning homogeneous maps for tail preservation
+%     \item Citations: [TODO: add 2-3 EVT theory papers]
+% \end{itemize}
 
-% TODO: Write sparsity mechanism
-\subsection{Sparsity Induces Asymptotic Homogeneity}
-\label{sec:theory:sparsity}
+% % TODO: Write paragraph on radial/angular decompositions
+% \paragraph{Radial and Angular Decompositions.}
+% TODO: Discuss related geometric decompositions. Include:
+% \begin{itemize}
+%     \item Radial basis functions, polar coordinates
+%     \item Star-shaped parameterizations, radial graphs
+%     \item Our contribution: adaptive asymptotic behavior via sparsity
+%     \item Citations: [TODO: add 2-3 papers on radial parameterizations]
+% \end{itemize}
 
-% TODO: State proposition
-\begin{proposition}[Sparsity drives asymptotic homogeneity]
-\label{prop:sparsity-asymptotic}
-Under the L1 sparsity penalty \(\lambda_{\text{sparse}} \norm{c_{\text{correction}}}_1\), the correction term \(c_{\text{correction}}\) is driven to zero in regions where the homogeneous baseline \(c_{\text{base}}\) alone provides sufficient reconstruction quality.
-\end{proposition}
+% % ==============================================================================
+% % SECTION 3: PROBLEM SETUP AND PRELIMINARIES
+% % ==============================================================================
+% % TODO LIST FOR THIS SECTION:
+% % - [  ] Write data model paragraph (manifold M, regular variation)
+% % - [  ] Write goal paragraph (encoder/decoder, requirements)
+% % - [  ] Write key constraint paragraph (homogeneity for tail preservation)
+% % - [  ] Add notation table if needed
+% % ==============================================================================
 
-% TODO: Intuitive argument
-\begin{proof}[Intuitive argument]
-TODO: Provide intuition. Include:
-\begin{itemize}
-    \item Loss trade-off: \(\cL = \cL_{\text{recon}} + \lambda_{\text{sparse}} \norm{c_{\text{correction}}}_1\)
-    \item When \(c_{\text{base}}\) sufficient: increasing \(\norm{c_{\text{correction}}}\) provides no reconstruction benefit but increases penalty
-    \item Gradient descent drives \(c_{\text{correction}} \to 0\)
-    \item In tail: manifold asymptotically cone-like (due to regular variation) \(\Rightarrow\) \(c_{\text{base}}\) sufficient
-    \item Result: \(c \approx c_{\text{base}}(\theta)\) for large \(r_w\), decoder becomes asymptotically homogeneous
-    \item Angular behavior: \(\hat{X}/\norm{\hat{X}} \approx c_{\text{base}}(\theta)\) depends only on latent angle, not radius
-\end{itemize}
-\end{proof}
+% \section{Problem Setup and Preliminaries}
+% \label{sec:setup}
 
-% TODO: Trade-off analysis
-\paragraph{Trade-off Analysis.}
-TODO: Discuss hyperparameter \(\lambda_{\text{sparse}}\). Include:
-\begin{itemize}
-    \item Small \(\lambda_{\text{sparse}}\): correction active everywhere, flexible but may not be asymptotically homogeneous
-    \item Large \(\lambda_{\text{sparse}}\): correction suppressed, asymptotically correct but may lose local flexibility
-    \item Optimal \(\lambda_{\text{sparse}}\): depends on manifold geometry (how quickly it becomes cone-like)
-    \item Manifold-dependent: complex manifolds need smaller \(\lambda\), simple cones need larger \(\lambda\)
-\end{itemize}
+% % TODO: Write data model paragraph
+% \paragraph{Data Model.}
 
-% TODO: Connection to geometric theory
-\subsection{Connection to Geometric Theory}
-\label{sec:theory:geometry}
+% TODO: Describe the data distribution and manifold structure. Include:
+% \begin{itemize}
+%     \item Data \(X \in \cM \subset \RR^D\) where \(\cM\) is a smooth \(m\)-dimensional manifold
+%     \item Regular variation: \(t P(X/t \in A) \to \mu(A)\) as \(t \to \infty\)
+%     \item Tail measure \(\mu\) encodes extreme behavior
+%     \item Example: Pareto-distributed radius with uniform angular component
+% \end{itemize}
 
-% TODO: Brief mention
-\paragraph{Ray-Fiber Geometry (Brief).}
-TODO: Briefly mention geometric theory, defer to appendix. Include:
-\begin{itemize}
-    \item Full geometric theory (ray-fibers, immersion, injectivity) developed in Appendix~\ref{app:geometry}
-    \item Key insight: decoder must span full manifold dimension (immersion) and avoid collisions (injectivity)
-    \item Three-component decoder addresses both: correction term provides degrees of freedom when needed
-    \item Sparsity ensures correction not overused, maintaining interpretability and generalization
-    \item For interested readers: see Appendix for complete differential-geometric analysis
-\end{itemize}
+% % TODO: Write goal paragraph
+% \paragraph{Learning Goal.}
+% TODO: State the learning problem precisely. Include:
+% \begin{itemize}
+%     \item Learn encoder \(f: \RR^D \to \RR^m\) and decoder \(g: \RR^m \to \RR^D\)
+%     \item Requirements:
+%     \begin{enumerate}[label=(\roman*)]
+%         \item \textbf{Tail preservation}: latent tail measure \(\mu_W = f_* \mu_X\) (pushforward)
+%         \item \textbf{Reconstruction}: \(\norm{X - g(f(X))}\) small on manifold
+%         \item \textbf{Generation}: sample from tail in latent space, decode faithfully to extremes
+%     \end{enumerate}
+%     \item Challenge: simultaneous dimensionality reduction and tail preservation
+% \end{itemize}
 
-% ==============================================================================
-% SECTION 6: EXPERIMENTS
-% ==============================================================================
-% TODO LIST FOR THIS SECTION:
-% - [  ] Run and report Experiment 1: Perfect cone (homogeneous manifold)
-% - [  ] Run and report Experiment 2: Non-homogeneous surface
-% - [  ] Run and report Experiment 3: Ablation study (4 variants)
-% - [  ] Create visualization figures (sparsity, latent space, generation)
-% - [  ] Select 3 real-world datasets with heavy tails
-% - [  ] Implement 3 baseline methods (standard AE, VAE, β-VAE)
-% - [  ] Report tail preservation metrics, quantile prediction, generation quality
-% - [  ] Create Tables 1-3 and Figures 3-6
-% ==============================================================================
+% % TODO: Write key constraint paragraph
+% \paragraph{Key Constraint: Encoder Homogeneity.}
+% TODO: Explain why homogeneity is necessary. Include:
+% \begin{itemize}
+%     \item Encoder must be \(p\)-homogeneous: \(f(\lambda x) = \lambda^p f(x)\)
+%     \item \textbf{Theorem} (from EVT): If \(X\) is regularly varying and \(f\) is \(p\)-homogeneous, then \(W = f(X)\) is regularly varying with \(\mu_W = f_* \mu_X\)
+%     \item Implication: can perform EVT analysis in latent space \(\RR^m\)
+%     \item This constraint motivates our architectural design
+% \end{itemize}
 
-\section{Experiments}
-\label{sec:experiments}
+% % TODO: Add notation table if space allows
+% % \paragraph{Notation.}
+% % [Optional: table of key notation if space allows]
 
-% TODO: Write synthetic experiments subsection
-\subsection{Controlled Synthetic Experiments}
-\label{sec:experiments:synthetic}
+% % ==============================================================================
+% % SECTION 4: METHOD - HOMOGENEOUS AUTOENCODERS
+% % ==============================================================================
+% % TODO LIST FOR THIS SECTION:
+% % - [  ] Write encoder architecture subsection (decomposition, implementation, homogeneity proof)
+% % - [  ] Write decoder challenge subsection (problem statement, why homogeneity is hard)
+% % - [  ] Write three-component decoder subsection (architecture, forward pass, sparsity, intuition)
+% % - [  ] Add architecture diagram (Figure 1 or 2)
+% % - [  ] Add pseudocode for forward pass
+% % ==============================================================================
 
-% TODO: Experiment 1
-\paragraph{Experiment 1: Perfect Cone (Homogeneous Manifold).}
-TODO: Describe cone experiment and results. Include:
-\begin{itemize}
-    \item \textbf{Setup}: Generate cone \(\{(r \cos \phi, r \sin \phi, hr) : r \sim \text{Pareto}(\alpha), \phi \sim \text{Uniform}(0, 2\pi)\}\)
-    \item Train with \(\lambda_{\text{sparse}} \in \{0.001, 0.01, 0.1\}\)
-    \item \textbf{Metrics}: sparsity \(\norm{c_{\text{correction}}}_1\), reconstruction MSE, tail index error
-    \item \textbf{Expected}: Low sparsity (correction not needed), excellent tail preservation
-    \item \textbf{Results}: [TODO: fill in after running experiments]
-    \item \textbf{Figure 3(a)}: Sparsity evolution during training
-\end{itemize}
+% TODO: CHECK THIS SECTION
+% \section{Method: Homogeneous Autoencoders}
+% \label{sec:method}
 
-% TODO: Experiment 2
-\paragraph{Experiment 2: Non-Homogeneous Surface.}
-TODO: Describe surface experiment and results. Include:
-\begin{itemize}
-    \item \textbf{Setup}: Complex surface (current implementation)
-    \item Train with same \(\lambda_{\text{sparse}}\) values
-    \item \textbf{Expected}: Higher sparsity (correction active), still preserves tail index
-    \item \textbf{Results}: [TODO: fill in]
-    \item \textbf{Figure 3(b)}: Compare sparsity vs reconstruction trade-off
-\end{itemize}
+% We now introduce the proposed autoencoder architecture. The design separates the roles of encoding and decoding. The encoder is constrained to be exactly \(p\)-homogeneous, so that latent regular variation follows from \Cref{prop:...}. The decoder is allowed to be non-homogeneous at moderate scales in order to be able to reconstruct curved manifold geometry, but is structured so that its non-homogeneous component is incentivised to be negligible in the tail, retaining asymptotic homogeneity and compatibility with transport of regular variation from latent to ambient spaces.
 
-% TODO: Experiment 3
-\paragraph{Experiment 3: Ablation Study.}
-TODO: Report ablation results. Include:
-\begin{itemize}
-    \item \textbf{Variants tested}:
-    \begin{enumerate}
-        \item Full model (baseline + correction + sparsity)
-        \item No correction (baseline only, \(c_{\text{correction}} = 0\))
-        \item No sparsity (\(\lambda_{\text{sparse}} = 0\), correction always active)
-        \item Standard autoencoder (no homogeneity constraint)
-    \end{enumerate}
-    \item \textbf{Results}: [TODO: Table 1 - quantitative comparison]
-    \item \textbf{Figure 4}: Bar chart comparing reconstruction, tail index preservation, generation quality
-\end{itemize}
+% \subsection{Encoder: \texorpdfstring{\(p\)}{p}-Homogeneous Representation}
+% \label{sec:method:encoder}
 
-% TODO: Visualization subsection
-\subsection{Visualization and Analysis}
-\label{sec:experiments:visualization}
+% Fix a centre \(c\in\RR^D\) and norm indices \(q_r,q_\pi\geq 1\). For \(x\neq c\), define
+% \[
+% r_c(x):=\norm{x-c}_{q_r},
+% \qquad
+% \pi_c(x):=\frac{x-c}{\norm{x-c}_{q_\pi}}\in \mathbb{S}^{D-1}_{q_\pi},
+% \]
+% where
+% \[
+% \mathbb{S}^{D-1}_{q_\pi}:=\{u\in\RR^D:\norm{u}_{q_\pi}=1\}.
+% \]
+% Thus \(r_c\) is the radial variable used for scaling, while \(\pi_c\) is the angular projection used to parameterise direction.
 
-% TODO: List figures to create
-TODO: Create visualization figures:
-\begin{itemize}
-    \item \textbf{Figure 5}: \(\norm{c_{\text{correction}}}\) vs \(r_w\) (should decrease for large \(r_w\))
-    \item \textbf{Figure 6}: Latent space structure (2D scatter, colored by radius)
-    \item \textbf{Figure 7}: Generated extremes from tail (sample large \(r_w\), decode, compare with true extremes)
-\end{itemize}
+% We define the encoder by
+% \[
+% f(x)=r_c(x)^p\, g(\pi_c(x)),
+% \qquad x\neq c,
+% \]
+% where
+% \[
+% g:\mathbb{S}^{D-1}_{q_\pi}\to\RR^m
+% \]
+% is a measurable angular map. This form separates radial and angular information: the radial contribution enters only through \(r_c(x)^p\), whereas all directional variation is captured by \(g(\pi_c(x))\).
 
-% TODO: Real-world experiments subsection
-\subsection{Real-World Heavy-Tailed Data}
-\label{sec:experiments:realworld}
+% A convenient further decomposition is
+% \[
+% g(u)=a(u)e(u),
+% \]
+% where
+% \[
+% a(u):=\norm{g(u)}_2\in(0,\infty),
+% \qquad
+% e(u):=\frac{g(u)}{\norm{g(u)}_2}\in\mathbb{S}^{m-1}.
+% \]
+% Hence, whenever \(g(u)\neq 0\),
+% \[
+% f(x)=r_c(x)^p\, a(\pi_c(x))\, e(\pi_c(x)).
+% \]
+% This introduces no additional restriction beyond nonvanishing of \(g\); it is simply the polar decomposition of the latent angular map \(g\) into a scalar magnitude term and a directional term.
 
-% TODO: Dataset selection
-\paragraph{Datasets.}
-TODO: Select and describe 3 datasets with documented heavy tails:
-\begin{enumerate}
-    \item \textbf{Financial returns}: [TODO: specify dataset, e.g., S\&P 500 daily returns]
-    \item \textbf{Network traffic}: [TODO: specify dataset]
-    \item \textbf{Climate/Insurance/Earthquake}: [TODO: select one and specify]
-\end{enumerate}
-For each: describe preprocessing, verify heavy tails (Hill estimator + QQ plots), train/val/test split.
+% In implementation, we parameterize \(g\) either directly or via
+% \[
+% e(u)=\frac{E_{\mathrm{ang}}(u)}{\norm{E_{\mathrm{ang}}(u)}_2},
+% \qquad
+% a(u)=\mathrm{softplus}\!\bigl(E_{\mathrm{mag}}(u)\bigr),
+% \]
+% with neural networks
+% \[
+% E_{\mathrm{ang}}:\mathbb{S}^{D-1}_{q_\pi}\to\RR^m,
+% \qquad
+% E_{\mathrm{mag}}:\mathbb{S}^{D-1}_{q_\pi}\to\RR_+.
+% \]
 
-% TODO: Baselines
-\paragraph{Baselines.}
-TODO: Implement and compare with:
-\begin{enumerate}
-    \item Standard autoencoder (no homogeneity)
-    \item VAE (variational autoencoder)
-    \item \(\beta\)-VAE (with \(\beta > 1\) for better disentanglement)
-    \item Our method (with tuned \(\lambda_{\text{sparse}}\))
-\end{enumerate}
+% The encoder is exactly \(p\)-homogeneous relative to the centre \(c\).
 
-% TODO: Metrics and results
-\paragraph{Metrics and Results.}
-TODO: Report results. Include:
-\begin{itemize}
-    \item \textbf{Table 2}: Tail index preservation (\(\alpha_{\text{original}}\), \(\alpha_{\text{latent}}\), \(\alpha_{\text{recon}}\), \(|\Delta \alpha|\))
-    \item \textbf{Table 3}: Extreme quantile prediction error (99\%, 99.9\%, 99.99\% quantiles)
-    \item \textbf{Figure 8}: QQ plots showing tail preservation (our method vs baselines)
-    \item \textbf{Figure 9}: Generated extremes vs real extremes (scatter plots)
-    \item \textbf{Key result}: Our method achieves [TODO: X\%] better tail index preservation than baselines while maintaining competitive reconstruction MSE
-\end{itemize}
+% \begin{lemma}
+% \label{lem:encoder-homogeneous}
+% Assume that the angular projection \(\pi_c\) is scale-invariant along rays through \(c\), i.e.
+% \[
+% \pi_c(c+\lambda(x-c))=\pi_c(x),
+% \qquad x\neq c,\ \lambda>0.
+% \]
+% Then, for every \(x\neq c\) and every \(\lambda>0\),
+% \[
+% f\bigl(c+\lambda(x-c)\bigr)=\lambda^p f(x).
+% \]
+% In particular, when \(c=0\),
+% \[
+% f(\lambda x)=\lambda^p f(x),\qquad \lambda>0.
+% \]
+% \end{lemma}
 
-% ==============================================================================
-% SECTION 7: DISCUSSION
-% ==============================================================================
-% TODO LIST FOR THIS SECTION:
-% - [  ] Write when does it work paragraph
-% - [  ] Write hyperparameter selection paragraph
-% - [  ] Write limitations paragraph
-% - [  ] Write broader impact paragraph
-% ==============================================================================
+% \begin{proof}
+% For \(x\neq c\) and \(\lambda>0\),
+% \[
+% r_c(c+\lambda(x-c))=\lambda r_c(x)
+% \]
+% by homogeneity of the norm \(\norm{\cdot}_{q_r}\), and by assumption,
+% \[
+% \pi_c(c+\lambda(x-c))=\pi_c(x).
+% \]
+% Therefore
+% \[
+% f\bigl(c+\lambda(x-c)\bigr)
+% =
+% r_c(c+\lambda(x-c))^p\, g(\pi_c(c+\lambda(x-c)))
+% =
+% \lambda^p r_c(x)^p g(\pi_c(x))
+% =
+% \lambda^p f(x).
+% \]
+% \end{proof}
 
-\section{Discussion}
-\label{sec:discussion}
+% By \Cref{prop:...}, this implies that if \(X\) is regularly varying and the remaining hypotheses there hold, then \(Z=f(X)\) is regularly varying with tail measure \(f_{\#}\mu\) and tail index \(\alpha/p\).
 
-% TODO: When does it work
-\paragraph{When Does the Method Work?}
-TODO: Discuss conditions for success. Include:
-\begin{itemize}
-    \item Works well when: manifold is asymptotically cone-like (regular variation holds)
-    \item Struggles when: manifold has persistent curvature at all scales
-    \item Manifold complexity determines optimal \(\lambda_{\text{sparse}}\)
-    \item Empirical observation: sparsity metric correlates with manifold geometry
-\end{itemize}
+% \subsection{Decoder: Adaptive Asymptotic Homogeneity}
+% \label{sec:method:decoder}
 
-% TODO: Hyperparameter selection
-\paragraph{Hyperparameter Selection.}
-TODO: Provide guidance. Include:
-\begin{itemize}
-    \item \(\lambda_{\text{sparse}}\): tune based on manifold complexity (start with 0.01)
-    \item Monitor sparsity during training (should stabilize)
-    \item Could be adaptive in future work (increase with \(r_w\))
-    \item Other hyperparameters (\(p\), network architecture): see Appendix~\ref{app:implementation}
-\end{itemize}
+% Write the latent variable in polar form as
+% \[
+% z=\rho(z)\theta(z),
+% \qquad
+% \rho(z):=\norm{z}_2,
+% \qquad
+% \theta(z):=\frac{z}{\norm{z}_2}\in\mathbb{S}^{m-1}.
+% \]
+% Since the encoder scales ambient radius through \(r_c^p\), the decoder inverts this radial transformation through \(\rho^{1/p}\).
 
-% TODO: Limitations
-\paragraph{Limitations.}
-TODO: Discuss limitations honestly. Include:
-\begin{itemize}
-    \item Requires choosing center \(c\) (currently fixed, could be learned)
-    \item Assumes manifold structure (dimension \(m\)) is known or estimated
-    \item Current implementation: 2D latent space (extension to higher \(m\) is future work)
-    \item Sparsity mechanism is implicit (could be more explicitly controlled)
-\end{itemize}
+% We define the decoder using three components:
+% \[
+% c_{\mathrm{hom}}:\mathbb{S}^{m-1}\to\RR^D,
+% \qquad
+% b:\mathbb{S}^{m-1}\to(0,\infty),
+% \qquad
+% c_{\mathrm{cor}}:\mathbb{S}^{m-1}\times\RR\to\RR^D.
+% \]
+% Here \(c_{\mathrm{hom}}\) is the homogeneous angular component, \(b\) is an angle-dependent magnitude term, and \(c_{\mathrm{cor}}\) is a non-homogeneous correction. The function \(b\) depends only on latent angle and is the decoder analogue of the encoder-side magnitude modulation.
 
-% TODO: Broader impact
-\paragraph{Broader Impact.}
-TODO: Discuss societal impact. Include:
-\begin{itemize}
-    \item \textbf{Positive}: enables EVT in latent space, applications in risk assessment, climate modeling, anomaly detection
-    \item \textbf{Potential misuse}: could generate adversarial extremes (acknowledge this risk)
-    \item \textbf{Recommendations}: use responsibly, validate generated samples, consider ethical implications
-\end{itemize}
+% The decoder is
+% \[
+% h(z)
+% =
+% c+\rho(z)^{1/p}
+% \Bigl(
+% b(\theta(z))\,c_{\mathrm{hom}}(\theta(z))
+% +
+% c_{\mathrm{cor}}(\theta(z), \rho(z))
+% \Bigr).
+% \]
+% The correction is added at the end. Thus the homogeneous structure is explicit, while the non-homogeneous component enters as an additive perturbation.
 
-% ==============================================================================
-% SECTION 8: CONCLUSION
-% ==============================================================================
-% TODO LIST FOR THIS SECTION:
-% - [  ] Write 2-3 sentence summary
-% - [  ] Write 1-2 sentence impact statement
-% - [  ] List 2-3 future work directions
-% ==============================================================================
+% In implementation, we use
+% \[
+% c_{\mathrm{hom}}(\theta)
+% =
+% \frac{H_{\mathrm{hom}}(\theta)}{\norm{H_{\mathrm{hom}}(\theta)}_2},
+% \qquad
+% b(\theta)=\mathrm{softplus}\!\bigl(H_{\mathrm{mag}}(\theta)\bigr),
+% \qquad
+% c_{\mathrm{cor}}(\theta,\rho)=H_{\mathrm{cor}}(\theta,\rho),
+% \]
+% with
+% \[
+% H_{\mathrm{hom}}:\mathbb{S}^{m-1}\to\RR^D,
+% \qquad
+% H_{\mathrm{mag}}:\mathbb{S}^{m-1}\to\RR,
+% \qquad
+% H_{\mathrm{cor}}:\mathbb{S}^{m-1}\times\RR\to\RR^D.
+% \]
 
-\section{Conclusion}
-\label{sec:conclusion}
+% The decoder is trained jointly with the encoder using reconstruction loss plus a radius-weighted sparsity penalty on the correction term. For \(z=f(x)\), we use
+% \[
+% \mathcal{L}(x)
+% =
+% \mathcal{L}_{\mathrm{recon}}\!\bigl(x,h(f(x))\bigr)
+% +
+% \lambda_{\mathrm{cor}}\,
+% \rho(f(x))\,
+% \norm{c_{\mathrm{cor}}(\theta(f(x)), \rho(f(x)))}_1.
+% \]
+% The factor \(\rho(f(x))\) increases the cost of non-homogeneous corrections at large latent radii. Consequently, the decoder is encouraged to use the correction term at moderate scales, where it improves reconstruction, and suppress it in the tail, where asymptotic homogeneity is preferred.
 
-% TODO: Summary
-TODO: Summarize paper (2-3 sentences). Include:
-\begin{itemize}
-    \item Introduced homogeneous autoencoders with adaptive asymptotic homogeneity
-    \item Provably preserve tail structure through encoder homogeneity and sparsity-regularized decoder
-    \item Validated on synthetic and real-world heavy-tailed data with [TODO: X\%] improvement over baselines
-\end{itemize}
+% This is the basic mechanism of adaptive asymptotic homogeneity: local geometric flexibility is carried by \(c_{\mathrm{cor}}\), while tail behaviour is controlled by the homogeneous component \(b(\theta)c_{\mathrm{hom}}(\theta)\).
+% % TODO: Write encoder subsection
+% \subsection{Encoder: \texorpdfstring{\(p\)}{p}-Homogeneity}
+% \label{sec:method:encoder}
 
-% TODO: Impact
-TODO: State impact (1-2 sentences). Include:
-\begin{itemize}
-    \item Enables extreme value analysis in latent space
-    \item Opens new possibilities for high-dimensional EVT and generation of extreme events
-\end{itemize}
+% % TODO: Write decomposition paragraph
+% \paragraph{Product-Form Decomposition.}
+% TODO: Explain encoder construction. Include:
+% \begin{itemize}
+%     \item Decompose \(x = c + r \cdot u\) where \(r = \norm{x - c}_2\) and \(u = (x - c)/r \in \mathbb{S}^{D-1}\)
+%     \item Product form: \(w = r^p \cdot a(u) \cdot e(u)\) where:
+%     \begin{itemize}
+%         \item \(e(u): \mathbb{S}^{D-1} \to \mathbb{S}^{m-1}\) (angular encoding, normalized to sphere)
+%         \item \(a(u): \mathbb{S}^{D-1} \to \RR^+\) (magnitude scaling, bounded on compact domain)
+%     \end{itemize}
+%     \item Latent \(w \in \RR^m\) with polar structure: \(r_w = \norm{w}\), \(\theta = w/\norm{w} \in \mathbb{S}^{m-1}\)
+% \end{itemize}
 
-% TODO: Future work
-TODO: Future directions:
-\begin{itemize}
-    \item Adaptive \(\lambda_{\text{sparse}}\) based on local manifold geometry and \(r_w\)
-    \item Extension to higher-dimensional latent spaces (\(m \> 2\))
-    \item Learning center \(c\) jointly with encoder/decoder
-    \item Applications to specific domains (finance, climate, networks)
-    \item Integration with normalizing flows for more flexible generation
-\end{itemize}
+% % TODO: Write implementation paragraph
+% \paragraph{Implementation.}
+% TODO: Describe neural architecture. Include:
+% \begin{itemize}
+%     \item Two MLPs: \texttt{encoder\_angular} (\(\mathbb{S}^{D-1} \to \RR^m\), then normalize) and \texttt{encoder\_magnitude} (\(\mathbb{S}^{D-1} \to \RR^+\), apply softplus)
+%     \item Forward pass: \(e = \text{normalize}(\text{MLP}_e(u))\), \(a = \text{softplus}(\text{MLP}_a(u))\), \(w = r^p \cdot a \cdot e\)
+%     \item Center \(c\) is fixed (could be learned, currently origin or data center)
+% \end{itemize}
 
-\section*{References}
+% % TODO: Write homogeneity proof
+% \paragraph{Homogeneity and Tail Preservation.}
+% TODO: Prove encoder is \(p\)-homogeneous. Include:
+% \begin{itemize}
+%     \item For \(\lambda > 0\): \(u(\lambda x) = u(x)\) (direction unchanged), \(r(\lambda x) = \lambda r(x)\)
+%     \item Therefore: \(\text{encode}(\lambda x) = (\lambda r)^p \cdot a(u) \cdot e(u) = \lambda^p \cdot \text{encode}(x)\)
+%     \item \textbf{Consequence}: Tail measure preserved via pushforward: \(\mu_W = \text{encode}_* \mu_X\)
+%     \item This enables EVT analysis in latent space
+% \end{itemize}
+
+% % TODO: Write decoder challenge subsection
+% \subsection{Decoder Challenge: Topological Collapse}
+% \label{sec:method:decoder-challenge}
+
+% % TODO: Write problem statement
+% \paragraph{The Problem.}
+% TODO: Explain decoder difficulty. Include:
+% \begin{itemize}
+%     \item Latent \(w \in \RR^m\) has \(m\) degrees of freedom: radius \(r_w = \norm{w}\) and angle \(\theta = w/\norm{w} \in \mathbb{S}^{m-1}\)
+%     \item Manifold \(\cM\) has dimension \(m\) (same!)
+%     \item Na\"ive decoder \(c(\theta): \mathbb{S}^{m-1} \to \mathbb{S}^{D-1}\) uses only \((m-1)\) DoF (angle)
+%     \item Result: decoder output collapses to \((m-1)\)-dimensional curve, cannot span \(m\)-dimensional manifold
+% \end{itemize}
+
+% % TODO: Write why homogeneity is hard
+% \paragraph{Why Homogeneity is Hard for Decoders.}
+% TODO: Explain the fundamental tension. Include:
+% \begin{itemize}
+%     \item Ideally: \(\text{decode}(\lambda^p w) = \lambda \cdot \text{decode}(w)\) for faithful generation from tail
+%     \item But: manifolds are not necessarily homogeneous everywhere (complex local structure)
+%     \item Encoder can be locally homogeneous (radial projection well-defined off-manifold)
+%     \item Decoder cannot: scaling in latent space must map to manifold, which may not be cone-like locally
+%     \item Solution: \emph{adaptive asymptotic homogeneity} via sparsity regularization
+% \end{itemize}
+
+% % TODO: Write three-component decoder subsection
+% \subsection{Three-Component Decoder with Adaptive Homogeneity}
+% \label{sec:method:decoder}
+
+% % TODO: Write architecture overview
+% \paragraph{Architecture Overview.}
+% TODO: Describe three-component structure. Include:
+% \begin{enumerate}
+%     \item \(c_{\text{base}}(\theta): \mathbb{S}^{m-1} \to \mathbb{S}^{D-1}\) --- homogeneous baseline angular component
+%     \item \(c_{\text{correction}}(\theta, r_w): \mathbb{S}^{m-1} \times \RR \to \RR^D\) --- sparse non-homogeneous correction
+%     \item \(b(\theta): \mathbb{S}^{m-1} \to \RR^+\) --- bounded angle-dependent radius scaling
+% \end{enumerate}
+% Key insight: separate homogeneous baseline from non-homogeneous correction, penalize correction to drive asymptotic homogeneity.
+
+% % TODO: Write forward pass
+% \paragraph{Forward Pass.}
+% TODO: Describe decoding procedure. Include pseudocode:
+% \begin{verbatim}
+% r_w = ||w||
+% theta = w / ||w||  (angle in latent space)
+% r_reconstructed = r_w^(1/p)  (invert encoder's r^p)
+
+% c_base = normalize(MLP_base(theta))  (homogeneous baseline)
+% c_correction = MLP_correction([theta, (r_w)])  (non-homogeneous)
+% c = normalize(c_base + c_correction)  (combined direction)
+
+% b = softplus(MLP_magnitude(theta))  (bounded scaling)
+% h = b * c  (final radial component)
+% x_hat = center + r_reconstructed * h  (ambient reconstruction)
+% \end{verbatim}
+
+% % TODO: Write sparsity regularization
+% \paragraph{Sparsity Regularization.}
+% TODO: Explain loss function and mechanism. Include:
+% \begin{itemize}
+%     \item Total loss: \(\cL = \cL_{\text{recon}} + \lambda_{\text{ang}} \cL_{\text{ang}} + \lambda_{\text{rad}} \cL_{\text{rad}} + \lambda_{\text{sparse}} \norm{c_{\text{correction}}}_1?*r_w?\)
+%     \item L1 penalty on \(c_{\text{correction}}\) and weighted by r encourages sparsity (entries driven to zero when not needed)
+%     \item Trade-off: reconstruction quality vs asymptotic homogeneity
+%     \item Mechanism: when \(c_{\text{base}}\) alone suffices, correction is penalized to zero
+% \end{itemize}
+
+% % TODO: Write intuition paragraph
+% \paragraph{Intuition: Adaptive Homogeneity.}
+% TODO: Explain how this solves the tension. Include:
+% \begin{itemize}
+%     \item \textbf{Near origin} (small \(r_w\)): manifold may have complex, non-homogeneous structure
+%     \begin{itemize}
+%         \item Reconstruction loss dominates sparsity penalty
+%         \item \(c_{\text{correction}}\) can be non-zero to capture complexity
+%         \item Decoder is locally flexible
+%     \end{itemize}
+%     \item \textbf{In tail} (large \(r_w\)): manifold becomes asymptotically cone-like (due to regular variation)
+%     \begin{itemize}
+%         \item \(c_{\text{base}}(\theta)\) alone captures structure
+%         \item \(c_{\text{correction}}\) provides diminishing benefit
+%         \item Sparsity penalty drives \(\norm{c_{\text{correction}}} \to 0\)
+%         \item Decoder becomes effectively homogeneous: \(c \approx c_{\text{base}}(\theta)\)
+%     \end{itemize}
+%     \item Result: automatic adaptation to manifold geometry ADD NOTES ABOUT WEIGHTING BY RADIUS
+% \end{itemize}
+
+% % TODO: Add architecture diagram reference
+% % [TODO: Add Figure 2 - Architecture diagram showing encoder/decoder components]
+
+% % ==============================================================================
+% % SECTION 5: THEORETICAL ANALYSIS
+% % ==============================================================================
+% % TODO LIST FOR THIS SECTION:
+% % - [  ] Write encoder tail preservation theorem + proof sketch
+% % - [  ] Write decoder tail index preservation proposition + analysis
+% % - [  ] Write sparsity induces asymptotic homogeneity proposition + trade-off analysis
+% % - [  ] Add brief connection to geometric theory (defer full theory to appendix)
+% % ==============================================================================
+
+% \section{Theoretical Analysis}
+% \label{sec:theory}
+
+% % TODO: State theorem
+% \begin{theorem}[Encoder preserves tail measure]
+% \label{thm:encoder-tail-preservation}
+% Let \(X \in \RR^D\) be regularly varying with tail measure \(\mu_X\). If the encoder \(f: \RR^D \to \RR^m\) is \(p\)-homogeneous (i.e., \(f(\lambda x) = \lambda^p f(x)\) for all \(\lambda > 0\)), then \(W = f(X)\) is regularly varying with tail measure \(\mu_W = f_* \mu_X\) (the pushforward of \(\mu_X\)).
+% \end{theorem}
+
+% % TODO: Proof sketch
+% \begin{proof}[Proof sketch]
+% TODO: Provide proof sketch. Include:
+% \begin{itemize}
+%     \item Regular variation: \(t P(X/t \in A) \to \mu_X(A)\) as \(t \to \infty\)
+%     \item Apply \(f\): \(t P(f(X)/t^p \in B) = t P(X/t \in f^{-1}(B)) \to \mu_X(f^{-1}(B))\)
+%     \item Change of variables: \(s = t^p\), so \(s P(f(X)/s \in B) \to \mu_X(f^{-1}(B))\)
+%     \item Define \(\mu_W(B) := \mu_X(f^{-1}(B))\), which is exactly the pushforward \(f_* \mu_X\)
+%     \item Conclusion: EVT can be performed in latent space with tail measure exactly preserved
+% \end{itemize}
+% \end{proof}
+
+% % TODO: Write decoder tail index preservation
+% \subsection{Decoder: Tail Index Preservation via Bounded Scaling}
+% \label{sec:theory:decoder}
+
+% % TODO: State proposition
+% \begin{proposition}[Bounded scaling preserves tail index]
+% \label{prop:bounded-scaling}
+% Suppose the decoder magnitude component \(b: \mathbb{S}^{m-1} \to \RR^+\) is bounded: \(b_{\min} \le b(\theta) \le b_{\max}\) for all \(\theta \in \mathbb{S}^{m-1}\). Then for generated samples \(W_{\text{new}}\) from the tail distribution in latent space, the decoded samples \(\hat{X} = \text{decode}(W_{\text{new}})\) preserve the tail index.
+% \end{proposition}
+
+% % TODO: Analysis
+% \begin{proof}[Analysis]
+% TODO: Provide analysis. Include:
+% \begin{itemize}
+%     \item Decoder output: \(\hat{X} = c + r_w^{1/p} \cdot b(\theta) \cdot \hat{c}\) where \(\hat{c} \in \mathbb{S}^{D-1}\)
+%     \item Radial component: \(\norm{\hat{X} - c} = r_w^{1/p} \cdot b(\theta) \cdot \norm{\hat{c}} = r_w^{1/p} \cdot b(\theta)\)
+%     \item Bounded \(b\): \(b_{\min} \cdot r_w^{1/p} \le \norm{\hat{X} - c} \le b_{\max} \cdot r_w^{1/p}\)
+%     \item Asymptotic behavior: \(\norm{\hat{X} - c} \sim r_w^{1/p}\) as \(r_w \to \infty\)
+%     \item Tail index: if \(P(\norm{W} > s) \sim s^{-\alpha}\), then \(P(\norm{\hat{X}} > t) \sim P(r_w^{1/p} > t/b_{\max}) \sim (t/b_{\max})^{-\alpha p} = t^{-\alpha p}\)
+%     \item Conclusion: tail index transformed by \(p\) (as expected from \(p\)-homogeneity)
+% \end{itemize}
+% \end{proof}
+
+% % TODO: Write sparsity mechanism
+% \subsection{Sparsity Induces Asymptotic Homogeneity}
+% \label{sec:theory:sparsity}
+
+% % TODO: State proposition
+% \begin{proposition}[Sparsity drives asymptotic homogeneity]
+% \label{prop:sparsity-asymptotic}
+% Under the L1 sparsity penalty \(\lambda_{\text{sparse}} \norm{c_{\text{correction}}}_1\), the correction term \(c_{\text{correction}}\) is driven to zero in regions where the homogeneous baseline \(c_{\text{base}}\) alone provides sufficient reconstruction quality.
+% \end{proposition}
+
+% % TODO: Intuitive argument
+% \begin{proof}[Intuitive argument]
+% TODO: Provide intuition. Include:
+% \begin{itemize}
+%     \item Loss trade-off: \(\cL = \cL_{\text{recon}} + \lambda_{\text{sparse}} \norm{c_{\text{correction}}}_1\)
+%     \item When \(c_{\text{base}}\) sufficient: increasing \(\norm{c_{\text{correction}}}\) provides no reconstruction benefit but increases penalty
+%     \item Gradient descent drives \(c_{\text{correction}} \to 0\)
+%     \item In tail: manifold asymptotically cone-like (due to regular variation) \(\Rightarrow\) \(c_{\text{base}}\) sufficient
+%     \item Result: \(c \approx c_{\text{base}}(\theta)\) for large \(r_w\), decoder becomes asymptotically homogeneous
+%     \item Angular behavior: \(\hat{X}/\norm{\hat{X}} \approx c_{\text{base}}(\theta)\) depends only on latent angle, not radius
+% \end{itemize}
+% \end{proof}
+
+% % TODO: Trade-off analysis
+% \paragraph{Trade-off Analysis.}
+% TODO: Discuss hyperparameter \(\lambda_{\text{sparse}}\). Include:
+% \begin{itemize}
+%     \item Small \(\lambda_{\text{sparse}}\): correction active everywhere, flexible but may not be asymptotically homogeneous
+%     \item Large \(\lambda_{\text{sparse}}\): correction suppressed, asymptotically correct but may lose local flexibility
+%     \item Optimal \(\lambda_{\text{sparse}}\): depends on manifold geometry (how quickly it becomes cone-like)
+%     \item Manifold-dependent: complex manifolds need smaller \(\lambda\), simple cones need larger \(\lambda\)
+% \end{itemize}
+
+% % TODO: Connection to geometric theory
+% \subsection{Connection to Geometric Theory}
+% \label{sec:theory:geometry}
+
+% % TODO: Brief mention
+% \paragraph{Ray-Fiber Geometry (Brief).}
+% TODO: Briefly mention geometric theory, defer to appendix. Include:
+% \begin{itemize}
+%     \item Full geometric theory (ray-fibers, immersion, injectivity) developed in Appendix~\ref{app:geometry}
+%     \item Key insight: decoder must span full manifold dimension (immersion) and avoid collisions (injectivity)
+%     \item Three-component decoder addresses both: correction term provides degrees of freedom when needed
+%     \item Sparsity ensures correction not overused, maintaining interpretability and generalization
+%     \item For interested readers: see Appendix for complete differential-geometric analysis
+% \end{itemize}
+
+% % ==============================================================================
+% % SECTION 6: EXPERIMENTS
+% % ==============================================================================
+% % TODO LIST FOR THIS SECTION:
+% % - [  ] Run and report Experiment 1: Perfect cone (homogeneous manifold)
+% % - [  ] Run and report Experiment 2: Non-homogeneous surface
+% % - [  ] Run and report Experiment 3: Ablation study (4 variants)
+% % - [  ] Create visualization figures (sparsity, latent space, generation)
+% % - [  ] Select 3 real-world datasets with heavy tails
+% % - [  ] Implement 3 baseline methods (standard AE, VAE, β-VAE)
+% % - [  ] Report tail preservation metrics, quantile prediction, generation quality
+% % - [  ] Create Tables 1-3 and Figures 3-6
+% % ==============================================================================
+
+% \section{Experiments}
+% \label{sec:experiments}
+
+% % TODO: Write synthetic experiments subsection
+% \subsection{Controlled Synthetic Experiments}
+% \label{sec:experiments:synthetic}
+
+% % TODO: Experiment 1
+% \paragraph{Experiment 1: Perfect Cone (Homogeneous Manifold).}
+% TODO: Describe cone experiment and results. Include:
+% \begin{itemize}
+%     \item \textbf{Setup}: Generate cone \(\{(r \cos \phi, r \sin \phi, hr) : r \sim \text{Pareto}(\alpha), \phi \sim \text{Uniform}(0, 2\pi)\}\)
+%     \item Train with \(\lambda_{\text{sparse}} \in \{0.001, 0.01, 0.1\}\)
+%     \item \textbf{Metrics}: sparsity \(\norm{c_{\text{correction}}}_1\), reconstruction MSE, tail index error
+%     \item \textbf{Expected}: Low sparsity (correction not needed), excellent tail preservation
+%     \item \textbf{Results}: [TODO: fill in after running experiments]
+%     \item \textbf{Figure 3(a)}: Sparsity evolution during training
+% \end{itemize}
+
+% % TODO: Experiment 2
+% \paragraph{Experiment 2: Non-Homogeneous Surface.}
+% TODO: Describe surface experiment and results. Include:
+% \begin{itemize}
+%     \item \textbf{Setup}: Complex surface (current implementation)
+%     \item Train with same \(\lambda_{\text{sparse}}\) values
+%     \item \textbf{Expected}: Higher sparsity (correction active), still preserves tail index
+%     \item \textbf{Results}: [TODO: fill in]
+%     \item \textbf{Figure 3(b)}: Compare sparsity vs reconstruction trade-off
+% \end{itemize}
+
+% % TODO: Experiment 3
+% \paragraph{Experiment 3: Ablation Study.}
+% TODO: Report ablation results. Include:
+% \begin{itemize}
+%     \item \textbf{Variants tested}:
+%     \begin{enumerate}
+%         \item Full model (baseline + correction + sparsity)
+%         \item No correction (baseline only, \(c_{\text{correction}} = 0\))
+%         \item No sparsity (\(\lambda_{\text{sparse}} = 0\), correction always active)
+%         \item Standard autoencoder (no homogeneity constraint)
+%     \end{enumerate}
+%     \item \textbf{Results}: [TODO: Table 1 - quantitative comparison]
+%     \item \textbf{Figure 4}: Bar chart comparing reconstruction, tail index preservation, generation quality
+% \end{itemize}
+
+% % TODO: Visualization subsection
+% \subsection{Visualization and Analysis}
+% \label{sec:experiments:visualization}
+
+% % TODO: List figures to create
+% TODO: Create visualization figures:
+% \begin{itemize}
+%     \item \textbf{Figure 5}: \(\norm{c_{\text{correction}}}\) vs \(r_w\) (should decrease for large \(r_w\))
+%     \item \textbf{Figure 6}: Latent space structure (2D scatter, colored by radius)
+%     \item \textbf{Figure 7}: Generated extremes from tail (sample large \(r_w\), decode, compare with true extremes)
+% \end{itemize}
+
+% % TODO: Real-world experiments subsection
+% \subsection{Real-World Heavy-Tailed Data}
+% \label{sec:experiments:realworld}
+
+% % TODO: Dataset selection
+% \paragraph{Datasets.}
+% TODO: Select and describe 3 datasets with documented heavy tails:
+% \begin{enumerate}
+%     \item \textbf{Financial returns}: [TODO: specify dataset, e.g., S\&P 500 daily returns]
+%     \item \textbf{Network traffic}: [TODO: specify dataset]
+%     \item \textbf{Climate/Insurance/Earthquake}: [TODO: select one and specify]
+% \end{enumerate}
+% For each: describe preprocessing, verify heavy tails (Hill estimator + QQ plots), train/val/test split.
+
+% % TODO: Baselines
+% \paragraph{Baselines.}
+% TODO: Implement and compare with:
+% \begin{enumerate}
+%     \item Standard autoencoder (no homogeneity)
+%     \item VAE (variational autoencoder)
+%     \item \(\beta\)-VAE (with \(\beta > 1\) for better disentanglement)
+%     \item Our method (with tuned \(\lambda_{\text{sparse}}\))
+% \end{enumerate}
+
+% % TODO: Metrics and results
+% \paragraph{Metrics and Results.}
+% TODO: Report results. Include:
+% \begin{itemize}
+%     \item \textbf{Table 2}: Tail index preservation (\(\alpha_{\text{original}}\), \(\alpha_{\text{latent}}\), \(\alpha_{\text{recon}}\), \(|\Delta \alpha|\))
+%     \item \textbf{Table 3}: Extreme quantile prediction error (99\%, 99.9\%, 99.99\% quantiles)
+%     \item \textbf{Figure 8}: QQ plots showing tail preservation (our method vs baselines)
+%     \item \textbf{Figure 9}: Generated extremes vs real extremes (scatter plots)
+%     \item \textbf{Key result}: Our method achieves [TODO: X\%] better tail index preservation than baselines while maintaining competitive reconstruction MSE
+% \end{itemize}
+
+% % ==============================================================================
+% % SECTION 7: DISCUSSION
+% % ==============================================================================
+% % TODO LIST FOR THIS SECTION:
+% % - [  ] Write when does it work paragraph
+% % - [  ] Write hyperparameter selection paragraph
+% % - [  ] Write limitations paragraph
+% % - [  ] Write broader impact paragraph
+% % ==============================================================================
+
+% \section{Discussion}
+% \label{sec:discussion}
+
+% % TODO: When does it work
+% \paragraph{When Does the Method Work?}
+% TODO: Discuss conditions for success. Include:
+% \begin{itemize}
+%     \item Works well when: manifold is asymptotically cone-like (regular variation holds)
+%     \item Struggles when: manifold has persistent curvature at all scales
+%     \item Manifold complexity determines optimal \(\lambda_{\text{sparse}}\)
+%     \item Empirical observation: sparsity metric correlates with manifold geometry
+% \end{itemize}
+
+% % TODO: Hyperparameter selection
+% \paragraph{Hyperparameter Selection.}
+% TODO: Provide guidance. Include:
+% \begin{itemize}
+%     \item \(\lambda_{\text{sparse}}\): tune based on manifold complexity (start with 0.01)
+%     \item Monitor sparsity during training (should stabilize)
+%     \item Could be adaptive in future work (increase with \(r_w\))
+%     \item Other hyperparameters (\(p\), network architecture): see Appendix~\ref{app:implementation}
+% \end{itemize}
+
+% % TODO: Limitations
+% \paragraph{Limitations.}
+% TODO: Discuss limitations honestly. Include:
+% \begin{itemize}
+%     \item Requires choosing center \(c\) (currently fixed, could be learned)
+%     \item Assumes manifold structure (dimension \(m\)) is known or estimated
+%     \item Current implementation: 2D latent space (extension to higher \(m\) is future work)
+%     \item Sparsity mechanism is implicit (could be more explicitly controlled)
+% \end{itemize}
+
+% % TODO: Broader impact
+% \paragraph{Broader Impact.}
+% TODO: Discuss societal impact. Include:
+% \begin{itemize}
+%     \item \textbf{Positive}: enables EVT in latent space, applications in risk assessment, climate modeling, anomaly detection
+%     \item \textbf{Potential misuse}: could generate adversarial extremes (acknowledge this risk)
+%     \item \textbf{Recommendations}: use responsibly, validate generated samples, consider ethical implications
+% \end{itemize}
+
+% % ==============================================================================
+% % SECTION 8: CONCLUSION
+% % ==============================================================================
+% % TODO LIST FOR THIS SECTION:
+% % - [  ] Write 2-3 sentence summary
+% % - [  ] Write 1-2 sentence impact statement
+% % - [  ] List 2-3 future work directions
+% % ==============================================================================
+
+% \section{Conclusion}
+% \label{sec:conclusion}
+
+% % TODO: Summary
+% TODO: Summarize paper (2-3 sentences). Include:
+% \begin{itemize}
+%     \item Introduced homogeneous autoencoders with adaptive asymptotic homogeneity
+%     \item Provably preserve tail structure through encoder homogeneity and sparsity-regularized decoder
+%     \item Validated on synthetic and real-world heavy-tailed data with [TODO: X\%] improvement over baselines
+% \end{itemize}
+
+% % TODO: Impact
+% TODO: State impact (1-2 sentences). Include:
+% \begin{itemize}
+%     \item Enables extreme value analysis in latent space
+%     \item Opens new possibilities for high-dimensional EVT and generation of extreme events
+% \end{itemize}
+
+% % TODO: Future work
+% TODO: Future directions:
+% \begin{itemize}
+%     \item Adaptive \(\lambda_{\text{sparse}}\) based on local manifold geometry and \(r_w\)
+%     \item Extension to higher-dimensional latent spaces (\(m \> 2\))
+%     \item Learning center \(c\) jointly with encoder/decoder
+%     \item Applications to specific domains (finance, climate, networks)
+%     \item Integration with normalizing flows for more flexible generation
+% \end{itemize}
+
+% \section*{References}
 
 {\small
 \bibliographystyle{plainnat}
 \bibliography{references}
 }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\appendix
-% ==============================================================================
-% APPENDIX: STRUCTURE AND TODO LIST
-% ==============================================================================
-% TODO LIST FOR APPENDICES:
-% - [  ] Write complete geometric theory (ray-fibers, immersion, injectivity)
-% - [  ] Write implementation details (network architectures, training, hyperparameters)
-% - [  ] Add additional experiments (ablations, sensitivity, failure cases)
-% - [  ] Write EVT background (regular variation, tail measures, Hill estimator)
-% ==============================================================================
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \appendix
+% % ==============================================================================
+% % APPENDIX: STRUCTURE AND TODO LIST
+% % ==============================================================================
+% % TODO LIST FOR APPENDICES:
+% % - [  ] Write complete geometric theory (ray-fibers, immersion, injectivity)
+% % - [  ] Write implementation details (network architectures, training, hyperparameters)
+% % - [  ] Add additional experiments (ablations, sensitivity, failure cases)
+% % - [  ] Write EVT background (regular variation, tail measures, Hill estimator)
+% % ==============================================================================
 
-\section{Complete Geometric Theory}
-\label{app:geometry}
+% \section{Complete Geometric Theory}
+% \label{app:geometry}
 
-% TODO: Write complete ray-fiber theory
-\subsection{Ray-Fiber Analysis}
+% % TODO: Write complete ray-fiber theory
+% \subsection{Ray-Fiber Analysis}
 
-TODO: Develop complete geometric theory. Include:
-\begin{itemize}
-    \item Ray-fibers \(\mathcal{F}_c(u) = \cM \cap R_{c,u}\) where \(R_{c,u} = \{c + tu : t > 0\}\)
-    \item Radial-value fibers \(\mathcal{S}_c(u)\)
-    \item Quotient sets \(\mathcal{Q}_c(u,v) = \mathcal{S}_c(u) / \mathcal{S}_c(v)\)
-    \item Hierarchy of fiber complexity (singleton, finite, discrete, positive-dimensional)
-\end{itemize}
+% TODO: Develop complete geometric theory. Include:
+% \begin{itemize}
+%     \item Ray-fibers \(\mathcal{F}_c(u) = \cM \cap R_{c,u}\) where \(R_{c,u} = \{c + tu : t > 0\}\)
+%     \item Radial-value fibers \(\mathcal{S}_c(u)\)
+%     \item Quotient sets \(\mathcal{Q}_c(u,v) = \mathcal{S}_c(u) / \mathcal{S}_c(v)\)
+%     \item Hierarchy of fiber complexity (singleton, finite, discrete, positive-dimensional)
+% \end{itemize}
 
-% TODO: Write immersion criteria
-\subsection{Immersion Criteria}
+% % TODO: Write immersion criteria
+% \subsection{Immersion Criteria}
 
-TODO: State and prove conditions for encoder to be an immersion. Include:
-\begin{itemize}
-    \item Differential analysis: when is \(d(f_c)_x\) injective?
-    \item Angular kernel space \(K_x = d\pi_c(T_x \cM) \cap \text{Ker}(de_c)\)
-    \item Sufficient conditions involving \(e_c\) and \(a_c\)
-    \item Connection to three-component decoder: correction provides needed degrees of freedom
-\end{itemize}
+% TODO: State and prove conditions for encoder to be an immersion. Include:
+% \begin{itemize}
+%     \item Differential analysis: when is \(d(f_c)_x\) injective?
+%     \item Angular kernel space \(K_x = d\pi_c(T_x \cM) \cap \text{Ker}(de_c)\)
+%     \item Sufficient conditions involving \(e_c\) and \(a_c\)
+%     \item Connection to three-component decoder: correction provides needed degrees of freedom
+% \end{itemize}
 
-% TODO: Write injectivity conditions
-\subsection{Injectivity and Global Collisions}
+% % TODO: Write injectivity conditions
+% \subsection{Injectivity and Global Collisions}
 
-TODO: Analyze when encoder is globally injective. Include:
-\begin{itemize}
-    \item Collision criterion: \(f_c(x_1) = f_c(x_2) \iff e_c(u_1) = e_c(u_2)\) and \(a_c(u_2)/a_c(u_1) \in \mathcal{Q}_c(u_1, u_2)\)
-    \item Equal-\(e_c\) fibers: \(\mathcal{E}_\xi = \{u : e_c(u) = \xi\}\)
-    \item Singleton-fiber simplification
-    \item Role of magnitude component \(b\) in avoiding collisions
-\end{itemize}
+% TODO: Analyze when encoder is globally injective. Include:
+% \begin{itemize}
+%     \item Collision criterion: \(f_c(x_1) = f_c(x_2) \iff e_c(u_1) = e_c(u_2)\) and \(a_c(u_2)/a_c(u_1) \in \mathcal{Q}_c(u_1, u_2)\)
+%     \item Equal-\(e_c\) fibers: \(\mathcal{E}_\xi = \{u : e_c(u) = \xi\}\)
+%     \item Singleton-fiber simplification
+%     \item Role of magnitude component \(b\) in avoiding collisions
+% \end{itemize}
 
-\section{Implementation Details}
-\label{app:implementation}
+% \section{Implementation Details}
+% \label{app:implementation}
 
-% TODO: Write network architectures
-\subsection{Network Architectures}
+% % TODO: Write network architectures
+% \subsection{Network Architectures}
 
-TODO: Specify all architectural details. Include:
-\begin{itemize}
-    \item Encoder: \texttt{encoder\_angular} (3 → 128 → 128 → 2, ReLU, then normalize), \texttt{encoder\_magnitude} (3 → 128 → 128 → 1, ReLU + softplus)
-    \item Decoder: \texttt{decoder\_angular\_base} (2 → 128 → 128 → 3, ReLU, then normalize), \texttt{decoder\_angular\_correction} (3 → 128 → 128 → 3, ReLU), \texttt{decoder\_magnitude} (2 → 128 → 128 → 1, ReLU + softplus)
-    \item Initialization: Xavier/Glorot for weights, zero for biases
-    \item Total parameters: [TODO: count]
-\end{itemize}
+% TODO: Specify all architectural details. Include:
+% \begin{itemize}
+%     \item Encoder: \texttt{encoder\_angular} (3 → 128 → 128 → 2, ReLU, then normalize), \texttt{encoder\_magnitude} (3 → 128 → 128 → 1, ReLU + softplus)
+%     \item Decoder: \texttt{decoder\_angular\_base} (2 → 128 → 128 → 3, ReLU, then normalize), \texttt{decoder\_angular\_correction} (3 → 128 → 128 → 3, ReLU), \texttt{decoder\_magnitude} (2 → 128 → 128 → 1, ReLU + softplus)
+%     \item Initialization: Xavier/Glorot for weights, zero for biases
+%     \item Total parameters: [TODO: count]
+% \end{itemize}
 
-% TODO: Write training procedure
-\subsection{Training Procedure}
+% % TODO: Write training procedure
+% \subsection{Training Procedure}
 
-TODO: Document training details. Include:
-\begin{itemize}
-    \item Optimizer: Adam with \(\beta_1 = 0.9\), \(\beta_2 = 0.999\)
-    \item Learning rate: \(10^{-3}\) with cosine annealing schedule
-    \item Batch size: 256 (synthetic), 128 (real-world)
-    \item Epochs: 1000 (synthetic), 500 (real-world)
-    \item Loss weights: \(\lambda_{\text{ang}} = 1.0\), \(\lambda_{\text{rad}} = 1.0\), \(\lambda_{\text{sparse}} \in \{0.001, 0.01, 0.1\}\)
-\end{itemize}
+% TODO: Document training details. Include:
+% \begin{itemize}
+%     \item Optimizer: Adam with \(\beta_1 = 0.9\), \(\beta_2 = 0.999\)
+%     \item Learning rate: \(10^{-3}\) with cosine annealing schedule
+%     \item Batch size: 256 (synthetic), 128 (real-world)
+%     \item Epochs: 1000 (synthetic), 500 (real-world)
+%     \item Loss weights: \(\lambda_{\text{ang}} = 1.0\), \(\lambda_{\text{rad}} = 1.0\), \(\lambda_{\text{sparse}} \in \{0.001, 0.01, 0.1\}\)
+% \end{itemize}
 
-% TODO: Write hyperparameter ranges
-\subsection{Hyperparameter Selection}
+% % TODO: Write hyperparameter ranges
+% \subsection{Hyperparameter Selection}
 
-TODO: Document hyperparameter search. Include:
-\begin{itemize}
-    \item \(p\) (homogeneity degree): tested \(\{1.0, 1.5, 2.0\}\), selected \(p = 2.0\)
-    \item \(\lambda_{\text{sparse}}\): grid search over \(\{0.001, 0.01, 0.1\}\)
-    \item Network depth/width: ablated \(\{64, 128, 256\}\) hidden units
-    \item Center \(c\): fixed at data centroid (could be learned)
-\end{itemize}
+% TODO: Document hyperparameter search. Include:
+% \begin{itemize}
+%     \item \(p\) (homogeneity degree): tested \(\{1.0, 1.5, 2.0\}\), selected \(p = 2.0\)
+%     \item \(\lambda_{\text{sparse}}\): grid search over \(\{0.001, 0.01, 0.1\}\)
+%     \item Network depth/width: ablated \(\{64, 128, 256\}\) hidden units
+%     \item Center \(c\): fixed at data centroid (could be learned)
+% \end{itemize}
 
-% TODO: Write computational requirements
-\subsection{Computational Requirements}
+% % TODO: Write computational requirements
+% \subsection{Computational Requirements}
 
-TODO: Document compute resources. Include:
-\begin{itemize}
-    \item Hardware: [TODO: specify GPU type, RAM]
-    \item Training time: [TODO: hours per experiment]
-    \item Inference time: [TODO: ms per sample]
-    \item Code: PyTorch 2.x, available at [TODO: github link]
-\end{itemize}
+% TODO: Document compute resources. Include:
+% \begin{itemize}
+%     \item Hardware: [TODO: specify GPU type, RAM]
+%     \item Training time: [TODO: hours per experiment]
+%     \item Inference time: [TODO: ms per sample]
+%     \item Code: PyTorch 2.x, available at [TODO: github link]
+% \end{itemize}
 
-\section{Additional Experiments}
-\label{app:experiments}
+% \section{Additional Experiments}
+% \label{app:experiments}
 
-% TODO: Write additional ablations
-\subsection{Additional Ablations}
+% % TODO: Write additional ablations
+% \subsection{Additional Ablations}
 
-TODO: Report additional ablation studies. Include:
-\begin{itemize}
-    \item Effect of \(p\) on tail preservation
-    \item Effect of network depth/width
-    \item Effect of center choice \(c\)
-    \item Sensitivity to loss weight ratios
-\end{itemize}
+% TODO: Report additional ablation studies. Include:
+% \begin{itemize}
+%     \item Effect of \(p\) on tail preservation
+%     \item Effect of network depth/width
+%     \item Effect of center choice \(c\)
+%     \item Sensitivity to loss weight ratios
+% \end{itemize}
 
-% TODO: Write sensitivity analyses
-\subsection{Sensitivity Analysis}
+% % TODO: Write sensitivity analyses
+% \subsection{Sensitivity Analysis}
 
-TODO: Analyze robustness. Include:
-\begin{itemize}
-    \item Robustness to initialization
-    \item Robustness to batch size
-    \item Robustness to noise in data
-    \item Cross-dataset generalization
-\end{itemize}
+% TODO: Analyze robustness. Include:
+% \begin{itemize}
+%     \item Robustness to initialization
+%     \item Robustness to batch size
+%     \item Robustness to noise in data
+%     \item Cross-dataset generalization
+% \end{itemize}
 
-% TODO: Write failure cases
-\subsection{Failure Cases}
+% % TODO: Write failure cases
+% \subsection{Failure Cases}
 
-TODO: Document when method fails. Include:
-\begin{itemize}
-    \item Manifolds with persistent curvature (no cone-like tail)
-    \item Very high-dimensional ambient space (\(D \gg 3\))
-    \item Non-regularly-varying data
-    \item Visualizations of failure modes
-\end{itemize}
+% TODO: Document when method fails. Include:
+% \begin{itemize}
+%     \item Manifolds with persistent curvature (no cone-like tail)
+%     \item Very high-dimensional ambient space (\(D \gg 3\))
+%     \item Non-regularly-varying data
+%     \item Visualizations of failure modes
+% \end{itemize}
 
-\section{Extreme Value Theory Background}
-\label{app:evt}
+% \section{Extreme Value Theory Background}
+% \label{app:evt}
 
-% TODO: Write EVT background
-\subsection{Regular Variation}
+% % TODO: Write EVT background
+% \subsection{Regular Variation}
 
-TODO: Define regular variation precisely. Include:
-\begin{itemize}
-    \item Definition: \(t P(X/t \in A) \to \mu(A)\) as \(t \to \infty\)
-    \item Examples: Pareto, Student-\(t\), Fr\'echet distributions
-    \item Connection to max-domain of attraction
-    \item Tail index \(\alpha\): \(P(\|X\| > t) \sim t^{-\alpha}\)
-\end{itemize}
+% TODO: Define regular variation precisely. Include:
+% \begin{itemize}
+%     \item Definition: \(t P(X/t \in A) \to \mu(A)\) as \(t \to \infty\)
+%     \item Examples: Pareto, Student-\(t\), Fr\'echet distributions
+%     \item Connection to max-domain of attraction
+%     \item Tail index \(\alpha\): \(P(\|X\| > t) \sim t^{-\alpha}\)
+% \end{itemize}
 
-% TODO: Write tail measures
-\subsection{Tail Measures and Pushforwards}
+% % TODO: Write tail measures
+% \subsection{Tail Measures and Pushforwards}
 
-TODO: Explain tail measures. Include:
-\begin{itemize}
-    \item Tail measure \(\mu\) on \(\RR^D \setminus \{0\}\)
-    \item Scaling property: \(\mu(tA) = t^{-\alpha} \mu(A)\) for \(t > 0\)
-    \item Pushforward \(f_* \mu\): \((f_* \mu)(B) = \mu(f^{-1}(B))\)
-    \item Key result: homogeneous maps preserve regular variation
-\end{itemize}
+% TODO: Explain tail measures. Include:
+% \begin{itemize}
+%     \item Tail measure \(\mu\) on \(\RR^D \setminus \{0\}\)
+%     \item Scaling property: \(\mu(tA) = t^{-\alpha} \mu(A)\) for \(t > 0\)
+%     \item Pushforward \(f_* \mu\): \((f_* \mu)(B) = \mu(f^{-1}(B))\)
+%     \item Key result: homogeneous maps preserve regular variation
+% \end{itemize}
 
-% TODO: Write Hill estimator
-\subsection{Hill Estimator}
+% % TODO: Write Hill estimator
+% \subsection{Hill Estimator}
 
-TODO: Document Hill estimator for \(\alpha\). Include:
-\begin{itemize}
-    \item Definition: \(\hat{\alpha} = \left( \frac{1}{k} \sum_{i=1}^k \log(X_{(i)} / X_{(k+1)}) \right)^{-1}\)
-    \item Choice of \(k\) (number of order statistics)
-    \item Bias-variance trade-off in \(k\)
-    \item Implementation details and confidence intervals
-\end{itemize}
+% TODO: Document Hill estimator for \(\alpha\). Include:
+% \begin{itemize}
+%     \item Definition: \(\hat{\alpha} = \left( \frac{1}{k} \sum_{i=1}^k \log(X_{(i)} / X_{(k+1)}) \right)^{-1}\)
+%     \item Choice of \(k\) (number of order statistics)
+%     \item Bias-variance trade-off in \(k\)
+%     \item Implementation details and confidence intervals
+% \end{itemize}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
-\section*{NeurIPS Paper Checklist}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \newpage
+% \section*{NeurIPS Paper Checklist}
 
-\begin{enumerate}
+% \begin{enumerate}
 
-\item {\bf Claims}
-    \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Claims}
+%     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Limitations}
-    \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Limitations}
+%     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Theory assumptions and proofs}
-    \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Theory assumptions and proofs}
+%     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Experimental result reproducibility}
-    \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Experimental result reproducibility}
+%     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Open access to data and code}
-    \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Open access to data and code}
+%     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Experimental setting/details}
-    \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Experimental setting/details}
+%     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Experiment statistical significance}
-    \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Experiment statistical significance}
+%     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Experiments compute resources}
-    \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Experiments compute resources}
+%     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
     
-\item {\bf Code of ethics}
-    \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Code of ethics}
+%     \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Broader impacts}
-    \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Broader impacts}
+%     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
     
-\item {\bf Safeguards}
-    \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Safeguards}
+%     \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Licenses for existing assets}
-    \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf Licenses for existing assets}
+%     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf New assets}
-    \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
-    \item[] Answer: \answerTODO{}
-    \item[] Justification: \justificationTODO{}
+% \item {\bf New assets}
+%     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
+%     \item[] Answer: \answerTODO{}
+%     \item[] Justification: \justificationTODO{}
 
-\item {\bf Crowdsourcing and research with human subjects}
-    \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)?
-    \item[] Answer: \answerNA{}
-    \item[] Justification: The current paper is theoretical and geometric; no crowdsourcing or human-subject research is presently involved.
+% \item {\bf Crowdsourcing and research with human subjects}
+%     \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)?
+%     \item[] Answer: \answerNA{}
+%     \item[] Justification: The current paper is theoretical and geometric; no crowdsourcing or human-subject research is presently involved.
 
-\item {\bf Institutional review board (IRB) approvals or equivalent for research with human subjects}
-    \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
-    \item[] Answer: \answerNA{}
-    \item[] Justification: The current paper does not involve human-subject research.
+% \item {\bf Institutional review board (IRB) approvals or equivalent for research with human subjects}
+%     \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
+%     \item[] Answer: \answerNA{}
+%     \item[] Justification: The current paper does not involve human-subject research.
 
-\item {\bf Declaration of LLM usage}
-    \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research?
-    \item[] Answer: \answerNA{}
-    \item[] Justification: The current research problem and methodology do not use LLMs as a component of the proposed theory or method.
+% \item {\bf Declaration of LLM usage}
+%     \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research?
+%     \item[] Answer: \answerNA{}
+%     \item[] Justification: The current research problem and methodology do not use LLMs as a component of the proposed theory or method.
 
-\end{enumerate}
+% \end{enumerate}
 
 \end{document}
