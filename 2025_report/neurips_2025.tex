@@ -350,17 +350,17 @@ Let
 \[
 \mathbb{O}_D := \mathbb{R}^D \setminus \{0\}.
 \]
-Fix \(q_{\mathrm{amb}} \in [1,\infty]\). For each \(x \in \mathbb{O}_D\), write
+Fix \(q \in [1,\infty]\). For each \(x \in \mathbb{O}_D\), write
 \[
 x = \rho\,\theta,
 \qquad
-\rho := \|x\|_{q_{\mathrm{amb}}} > 0,
+\rho := \|x\|_{q} > 0,
 \qquad
-\theta := \frac{x}{\|x\|_{q_{\mathrm{amb}}}} \in \mathbb{S}^{D-1}_{q_{\mathrm{amb}}},
+\theta := \frac{x}{\|x\|_{q}} \in \mathbb{S}^{D-1}_{q},
 \]
 where
 \[
-\mathbb{S}^{D-1}_{q_{\mathrm{amb}}} := \{u \in \mathbb{R}^D : \|u\|_{q_{\mathrm{amb}}} = 1\}.
+\mathbb{S}^{D-1}_{q} := \{u \in \mathbb{R}^D : \|u\|_{q} = 1\}.
 \]
 
 \begin{proposition}[Radial--angular factorisation of positively homogeneous maps]
@@ -375,11 +375,11 @@ following are equivalent:
     \]
     \item there exists a unique map
     \[
-    g : \mathbb{S}^{D-1}_{q_{\mathrm{amb}}} \to \mathbb{R}^m
+    g : \mathbb{S}^{D-1}_{q} \to \mathbb{R}^m
     \]
     such that
     \[
-    f(x) = \|x\|_{q_{\mathrm{amb}}}^p\, g\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right),
+    f(x) = \|x\|_{q}^p\, g\!\left(\frac{x}{\|x\|_{q}}\right),
     \qquad x \in \mathbb{O}_D.
     \]
 \end{enumerate}
@@ -388,48 +388,48 @@ following are equivalent:
 \begin{proof}
 Firstly, to verify that the provided factorisation is indeed homogeneous, suppose that
 \[
-f(x) = \|x\|_{q_{\mathrm{amb}}}^p\, g\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right),
+f(x) = \|x\|_{q}^p\, g\!\left(\frac{x}{\|x\|_{q}}\right),
 \qquad x \in \mathbb{O}_D.
 \]
 Then for every \(\lambda > 0\),
 \[
 f(\lambda x)
 =
-\|\lambda x\|_{q_{\mathrm{amb}}}^p\, g\!\left(\frac{\lambda x}{\|\lambda x\|_{q_{\mathrm{amb}}}}\right)
+\|\lambda x\|_{q}^p\, g\!\left(\frac{\lambda x}{\|\lambda x\|_{q}}\right)
 =
-(\lambda \|x\|_{q_{\mathrm{amb}}})^p\, g\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right)
+(\lambda \|x\|_{q})^p\, g\!\left(\frac{x}{\|x\|_{q}}\right)
 =
 \lambda^p f(x),
 \]
-since \(\|\lambda x\|_{q_{\mathrm{amb}}} = \lambda \|x\|_{q_{\mathrm{amb}}}\) for \(\lambda > 0\). Thus \(f\) is positively homogeneous of degree \(p\).
+since \(\|\lambda x\|_{q} = \lambda \|x\|_{q}\) for \(\lambda > 0\). Thus \(f\) is positively homogeneous of degree \(p\).
 
 Now to show that any valid f always admits a radial--angular factorisation, assume that \(f\) is positively homogeneous of degree \(p\). Define
 \[
 g(\theta) := f(\theta),
-\qquad \theta \in \mathbb{S}^{D-1}_{q_{\mathrm{amb}}}.
+\qquad \theta \in \mathbb{S}^{D-1}_{q}.
 \]
 For any \(x \in \mathbb{O}_D\), we have
 \[
-x = \|x\|_{q_{\mathrm{amb}}} \frac{x}{\|x\|_{q_{\mathrm{amb}}}},
+x = \|x\|_{q} \frac{x}{\|x\|_{q}},
 \]
 and therefore, by positive homogeneity,
 \[
 f(x)
 =
-f\!\left(\|x\|_{q_{\mathrm{amb}}} \frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right)
+f\!\left(\|x\|_{q} \frac{x}{\|x\|_{q}}\right)
 =
-\|x\|_{q_{\mathrm{amb}}}^p\, f\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right)
+\|x\|_{q}^p\, f\!\left(\frac{x}{\|x\|_{q}}\right)
 =
-\|x\|_{q_{\mathrm{amb}}}^p\, g\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right).
+\|x\|_{q}^p\, g\!\left(\frac{x}{\|x\|_{q}}\right).
 \]
 This proves existence.
 
 To prove uniqueness, suppose also that
 \[
-f(x) = \|x\|_{q_{\mathrm{amb}}}^p\, \tilde g\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right)
+f(x) = \|x\|_{q}^p\, \tilde g\!\left(\frac{x}{\|x\|_{q}}\right)
 \]
-for some map \(\tilde g : \mathbb{S}^{D-1}_{q_{\mathrm{amb}}} \to \mathbb{R}^m\). Let
-\(\theta \in \mathbb{S}^{D-1}_{q_{\mathrm{amb}}}\). Since \(\|\theta\|_{q_{\mathrm{amb}}} = 1\), evaluating both
+for some map \(\tilde g : \mathbb{S}^{D-1}_{q} \to \mathbb{R}^m\). Let
+\(\theta \in \mathbb{S}^{D-1}_{q}\). Since \(\|\theta\|_{q} = 1\), evaluating both
 representations at \(x=\theta\) gives
 \[
 f(\theta)=g(\theta)
@@ -440,45 +440,45 @@ Therefore
 \[
 g(\theta)=\tilde g(\theta)
 \qquad
-\text{for every } \theta \in \mathbb{S}^{D-1}_{q_{\mathrm{amb}}}.
+\text{for every } \theta \in \mathbb{S}^{D-1}_{q}.
 \]
 Hence \(g=\tilde g\).
 \end{proof}
 
 \begin{remark}
 The proposition shows that, for a given norm
-\(\|\cdot\|_{q_{\mathrm{amb}}}\), a positively homogeneous map is completely determined by its
-restriction to the \(q_{\mathrm{amb}}\)-sphere: the scaling behaviour is prescribed by \(\|x\|_{q_{\mathrm{amb}}}^p\), and all remaining structure is represented by the angular component \(g\).
+\(\|\cdot\|_{q}\), a positively homogeneous map is completely determined by its
+restriction to the \(q\)-sphere: the scaling behaviour is prescribed by \(\|x\|_{q}^p\), and all remaining structure is represented by the angular component \(g\).
 \end{remark}
 
 A corollary of \ref{prop:canonical-homogeneous-form} is that, on the subset
 \[
-\{\theta \in \mathbb{S}^{D-1}_{q_{\mathrm{amb}}} : g(\theta) \neq 0\},
+\{\theta \in \mathbb{S}^{D-1}_{q} : g(\theta) \neq 0\},
 \]
 one may further decompose \(g\) into magnitude and direction:
 \[
 g(\theta) = a(\theta)e(\theta),
 \qquad
-a(\theta) := \|g(\theta)\|_{q_{\mathrm{lat}}},
+a(\theta) := \|g(\theta)\|_{q},
 \qquad
-e(\theta) := \frac{g(\theta)}{\|g(\theta)\|_{q_{\mathrm{lat}}}} \in \mathbb{S}^{m-1}_{q_{\mathrm{lat}}},
+e(\theta) := \frac{g(\theta)}{\|g(\theta)\|_{q}} \in \mathbb{S}^{m-1}_{q},
 \]
-where \(q_{\mathrm{lat}} \in [1,\infty]\) is a latent-space norm exponent.
+where \(q \in [1,\infty]\) is a latent-space norm exponent. For notational simplicity, we use \(q\) to denote norm exponents in both the ambient space \(\mathbb{R}^D\) and the latent space \(\mathbb{R}^m\). However, these exponents need not be equal in practice, allowing flexibility in the choice of norm for each space.
 
 Thus, for every \(x \in \mathbb{O}_D\) such that
-\(g(x/\|x\|_{q_{\mathrm{amb}}}) \neq 0\), we always have the decomposition
+\(g(x/\|x\|_{q}) \neq 0\), we always have the decomposition
 \[
 f(x)
 =
-\|x\|_{q_{\mathrm{amb}}}^p\,
-a\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right)
-e\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right).
+\|x\|_{q}^p\,
+a\!\left(\frac{x}{\|x\|_{q}}\right)
+e\!\left(\frac{x}{\|x\|_{q}}\right).
 \]
 
-Under this representation, \(a\) can be considered as an angle-dependent scaling factor, \(e\) as an angle-map, and \(\|x\|_{q_{\mathrm{amb}}}^p\) as a purely radial scaling term.
+Under this representation, \(a\) can be considered as an angle-dependent scaling factor, \(e\) as an angle-map, and \(\|x\|_{q}^p\) as a purely radial scaling term.
 
 More generally, the same argument applies whenever one replaces
-\(\|x\|_{q_{\mathrm{amb}}}\) by a positive radial function \(r : \mathbb{O}_D \to (0,\infty)\)
+\(\|x\|_{q}\) by a positive radial function \(r : \mathbb{O}_D \to (0,\infty)\)
 satisfying
 \[
 r(\lambda x) = \lambda r(x),
@@ -496,42 +496,42 @@ We now specify the proposed autoencoder architecture. The design separates the r
 
 By \Cref{prop:canonical-homogeneous-form}, every positively homogeneous map \(f:\mathbb{O}_D\to\mathbb{R}^m\) of degree \(p\) can be written in the form
 \[
-f(x)=\|x\|_{q_{\mathrm{amb}}}^p\,g\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right),
+f(x)=\|x\|_{q}^p\,g\!\left(\frac{x}{\|x\|_{q}}\right),
 \qquad x\in\mathbb{O}_D,
 \]
-for a unique angular map \(g:\mathbb{S}^{D-1}_{q_{\mathrm{amb}}}\to\mathbb{R}^m\). We therefore need only parameterise the angular component of the encoder.
+for a unique angular map \(g:\mathbb{S}^{D-1}_{q}\to\mathbb{R}^m\). We therefore need only parameterise the angular component of the encoder.
 
 Also, whenever \(g(\theta)\neq 0\), we further write
 \[
 g(\theta)=a(\theta)e(\theta),
 \qquad
-a(\theta):=\|g(\theta)\|_{q_{\mathrm{lat}}},
+a(\theta):=\|g(\theta)\|_{q},
 \qquad
-e(\theta):=\frac{g(\theta)}{\|g(\theta)\|_{q_{\mathrm{lat}}}}\in\mathbb{S}^{m-1}_{q_{\mathrm{lat}}},
+e(\theta):=\frac{g(\theta)}{\|g(\theta)\|_{q}}\in\mathbb{S}^{m-1}_{q},
 \]
-where \(q_{\mathrm{lat}}\in[1,\infty]\) is a latent-space norm exponent. The encoder then takes the form
+where \(q\in[1,\infty]\) is a latent-space norm exponent. The encoder then takes the form
 \[
 f(x)
 =
-\|x\|_{q_{\mathrm{amb}}}^p\,
-a\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right)
-e\!\left(\frac{x}{\|x\|_{q_{\mathrm{amb}}}}\right).
+\|x\|_{q}^p\,
+a\!\left(\frac{x}{\|x\|_{q}}\right)
+e\!\left(\frac{x}{\|x\|_{q}}\right).
 \]
-Here \(\|x\|_{q_{\mathrm{amb}}}^p\) is the homogeneous radial term, \(a\) is an angle-dependent scaling, and \(e\) is an angular map from the ambient sphere to the latent sphere. This secondary decomposition, whilst theoretically serving only a limited role, is helpful for practical model training purposes such as diagnostics, regularisation and visualisation.
+Here \(\|x\|_{q}^p\) is the homogeneous radial term, \(a\) is an angle-dependent scaling, and \(e\) is an angular map from the ambient sphere to the latent sphere. This secondary decomposition, whilst theoretically serving only a limited role, is helpful for practical model training purposes such as diagnostics, regularisation and visualisation.
 
-For implementation, \(a\) and \(e\) are represented by neural networks on \(\mathbb{S}^{D-1}_{q_{\mathrm{amb}}}\):
+For implementation, \(a\) and \(e\) are represented by neural networks on \(\mathbb{S}^{D-1}_{q}\):
 \[
 a(\theta)=\mathrm{softplus}\!\bigl(A_\phi(\theta)\bigr),
 \qquad
-e(\theta)=\frac{E_\phi(\theta)}{\|E_\phi(\theta)\|_{q_{\mathrm{lat}}}},
+e(\theta)=\frac{E_\phi(\theta)}{\|E_\phi(\theta)\|_{q}},
 \]
 where
 \[
-A_\phi:\mathbb{S}^{D-1}_{q_{\mathrm{amb}}}\to\mathbb{R},
+A_\phi:\mathbb{S}^{D-1}_{q}\to\mathbb{R},
 \qquad
-E_\phi:\mathbb{S}^{D-1}_{q_{\mathrm{amb}}}\to\mathbb{R}^m.
+E_\phi:\mathbb{S}^{D-1}_{q}\to\mathbb{R}^m.
 \]
-We assume that \(E_\phi(\theta)\neq 0\) for all \(\theta\) in the domain of interest, so that the normalised direction map is well-defined. The softplus nonlinearity enforces positivity of \(a\), and normalisation enforces \(e(\theta)\in\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\). By construction, the resulting encoder is exactly positively homogeneous of degree \(p\). The importance of this formulation is that homogeneity of the encoder is not imposed by penalty or approximation but is ensured via the architectural setup. Then, by \Cref{prop:reg-variation-under-homogeneous-encoders}, the latent representation
+We assume that \(E_\phi(\theta)\neq 0\) for all \(\theta\) in the domain of interest, so that the normalised direction map is well-defined. The softplus nonlinearity enforces positivity of \(a\), and normalisation enforces \(e(\theta)\in\mathbb{S}^{m-1}_{q}\). By construction, the resulting encoder is exactly positively homogeneous of degree \(p\). The importance of this formulation is that homogeneity of the encoder is not imposed by penalty or approximation but is ensured via the architectural setup. Then, by \Cref{prop:reg-variation-under-homogeneous-encoders}, the latent representation
 \[
 Z=f(X)
 \]
@@ -546,9 +546,9 @@ Writing the latent variable in polar form as
 \[
 z=\rho\,\eta,
 \qquad
-\rho:=\|z\|_{q_{\mathrm{lat}}},
+\rho:=\|z\|_{q},
 \qquad
-\eta:=\frac{z}{\|z\|_{q_{\mathrm{lat}}}}\in\mathbb{S}^{m-1}_{q_{\mathrm{lat}}},
+\eta:=\frac{z}{\|z\|_{q}}\in\mathbb{S}^{m-1}_{q},
 \]
 the encoder scales ambient radius by the power \(p\), so the decoder is chosen with leading radial factor \(\rho^{1/p}\). We first define the homogeneous decoder
 \[
@@ -556,27 +556,27 @@ h_{\mathrm{hom}}(z)
 =
 \rho^{1/p}\,\tilde a(\eta)\,\tilde e(\eta),
 \qquad
-\tilde e:\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\to \mathbb{S}^{D-1}_{q_{\mathrm{amb}}},
+\tilde e:\mathbb{S}^{m-1}_{q}\to \mathbb{S}^{D-1}_{q},
 \qquad
-\tilde a:\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\to (0,\infty),
+\tilde a:\mathbb{S}^{m-1}_{q}\to (0,\infty),
 \]
-with angular map \(\tilde e\) and decoder-side magnitude term \(\tilde a\). This is the natural inverse analogue of the encoder parameterisation \(f(x)=\|x\|_{q_{\mathrm{amb}}}^p\,a(\theta)\,e(\theta)\).
+with angular map \(\tilde e\) and decoder-side magnitude term \(\tilde a\). This is the natural inverse analogue of the encoder parameterisation \(f(x)=\|x\|_{q}^p\,a(\theta)\,e(\theta)\).
 
 Whilst \(h_{\mathrm{hom}}\) suffices for homogeneous or cone-like manifolds, one must forgo global homogeneity of the decoder in order to represent more general smooth curved manifolds. To this end, we introduce a radius-dependent angular correction. Let
 \[
-\delta:\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\times(0,\infty)\to \mathbb{R}^D
+\delta:\mathbb{S}^{m-1}_{q}\times(0,\infty)\to \mathbb{R}^D
 \]
 denote the correction term [TODO: could equivalently be parameterised by the full latent coordinate \(z\), but the radial--angular form is perhaps more intuitive for interpretation and analysis]. We define the corrected decoded angle
 \[
 \tilde c(\eta,\rho)
 :=
 \frac{\tilde e(\eta)+\delta(\eta,\rho)}
-{\bigl\|\tilde e(\eta)+\delta(\eta,\rho)\bigr\|_{q_{\mathrm{amb}}}}
-\in \mathbb{S}^{D-1}_{q_{\mathrm{amb}}},
+{\bigl\|\tilde e(\eta)+\delta(\eta,\rho)\bigr\|_{q}}
+\in \mathbb{S}^{D-1}_{q},
 \]
 which is well-defined provided
 \[
-\bigl\|\tilde e(\eta)+\delta(\eta,\rho)\bigr\|_{q_{\mathrm{amb}}}\neq 0.
+\bigl\|\tilde e(\eta)+\delta(\eta,\rho)\bigr\|_{q}\neq 0.
 \]
 The full decoder is then
 \[
@@ -589,16 +589,16 @@ z\in\mathbb{R}^m\setminus\{0\}.
 
 If \(\delta\equiv 0\), then \(\tilde c(\eta,\rho)=\tilde e(\eta)\) for all \((\eta,\rho)\), and the decoder reduces to the positively homogeneous case \(h_{\mathrm{hom}}(z)\) of degree \(1/p\). More generally, a sufficient condition for asymptotic directional homogeneity is [TODO: maybe formalise this a bit]
 \[
-\sup_{\eta\in\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}}\|\delta(\eta,\rho)\|\to 0
+\sup_{\eta\in\mathbb{S}^{m-1}_{q}}\|\delta(\eta,\rho)\|\to 0
 \qquad\text{as }\rho\to\infty,
 \]
 together with a nondegeneracy condition ensuring that
 \[
-\inf_{\eta,\rho}\bigl\|\tilde e(\eta)+\delta(\eta,\rho)\bigr\|_{q_{\mathrm{amb}}}>0.
+\inf_{\eta,\rho}\bigl\|\tilde e(\eta)+\delta(\eta,\rho)\bigr\|_{q}>0.
 \]
 Under these assumptions,
 \[
-\sup_{\eta\in\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}}
+\sup_{\eta\in\mathbb{S}^{m-1}_{q}}
 \bigl\|\tilde c(\eta,\rho)-\tilde e(\eta)\bigr\|\to 0
 \qquad\text{as }\rho\to\infty,
 \]
@@ -610,7 +610,7 @@ s(\rho):=\frac{1}{1+\rho}\in(0,1),
 \]
 so that the limit \(\rho\to\infty\) is the boundary point \(s=0\). Then, let
 \[
-\Delta_\psi:\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\times[0,1]\to \mathbb{R}^D
+\Delta_\psi:\mathbb{S}^{m-1}_{q}\times[0,1]\to \mathbb{R}^D
 \]
 be a continuous neural network and define
 \[
@@ -618,9 +618,9 @@ be a continuous neural network and define
 :=
 \Delta_\psi\bigl(\eta,s(\rho)\bigr)-\Delta_\psi(\eta,0).
 \]
-Since \(s(\rho)\to 0\) as \(\rho\to\infty\) and \(\Delta_\psi\) is continuous on the compact set \(\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\times[0,1]\), by the uniform continuity theorem we have
+Since \(s(\rho)\to 0\) as \(\rho\to\infty\) and \(\Delta_\psi\) is continuous on the compact set \(\mathbb{S}^{m-1}_{q}\times[0,1]\), by the uniform continuity theorem we have
 \[
-\sup_{\eta\in\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}}\|\delta(\eta,\rho)\|\to 0
+\sup_{\eta\in\mathbb{S}^{m-1}_{q}}\|\delta(\eta,\rho)\|\to 0
 \qquad\text{as }\rho\to\infty.
 \]
 Thus the angular correction vanishes in the radial limit, ensuring asymptotic homogeneity of the decoder, provided the denominator remains bounded away from zero.
@@ -631,17 +631,17 @@ To parameterise the full decoder in practice, we use
 \[
 \tilde a(\eta)=\mathrm{softplus}\!\bigl(A_\psi(\eta)\bigr),
 \qquad
-\tilde e(\eta)=\frac{E_\psi(\eta)}{\|E_\psi(\eta)\|_{q_{\mathrm{amb}}}},
+\tilde e(\eta)=\frac{E_\psi(\eta)}{\|E_\psi(\eta)\|_{q}},
 \qquad
 \delta(\eta,\rho)=\Delta_\psi\bigl(\eta,s(\rho)\bigr)-\Delta_\psi(\eta,0),
 \]
 with neural networks
 \[
-A_\psi:\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\to \mathbb{R},
+A_\psi:\mathbb{S}^{m-1}_{q}\to \mathbb{R},
 \qquad
-E_\psi:\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\to \mathbb{R}^D,
+E_\psi:\mathbb{S}^{m-1}_{q}\to \mathbb{R}^D,
 \qquad
-\Delta_\psi:\mathbb{S}^{m-1}_{q_{\mathrm{lat}}}\times[0,1]\to \mathbb{R}^D.
+\Delta_\psi:\mathbb{S}^{m-1}_{q}\times[0,1]\to \mathbb{R}^D.
 \]
 We assume throughout that \(E_\psi(\eta)\neq 0\) on the domain of interest, so that the normalised map \(\tilde e\) is well-defined.
 
