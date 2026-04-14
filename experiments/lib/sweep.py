@@ -19,7 +19,13 @@ import torch
 from .config import FlexibleToyConfig
 from .data import FlexibleToyEmbedding, generate_flexible_toy
 from .evaluation import serializable, train_and_evaluate
-from .models import HomogeneousAutoencoder, PCABaseline, StandardAutoencoder
+from .models import (
+    HomogeneousAutoencoder,
+    PCABaseline,
+    StandardAutoencoder,
+    compute_matched_hidden_dim,
+    count_parameters,
+)
 
 
 SCALAR_METRIC_KEYS: Tuple[str, ...] = (
@@ -73,20 +79,35 @@ def build_embedding(config: FlexibleToyConfig) -> FlexibleToyEmbedding:
 
 
 def build_model_zoo(config: FlexibleToyConfig) -> Dict[str, Any]:
+    """Build the three-model zoo with parameter-matched hidden dims.
+
+    HAE uses ``config.hidden_dim``. StdAE gets a larger hidden_dim
+    computed so that its total parameter count matches HAE's.
+    """
+    hae = HomogeneousAutoencoder(
+        D=config.D,
+        m=config.m,
+        hidden_dim=config.hidden_dim,
+        hidden_layers=config.hidden_layers,
+        p_homogeneity=config.p_homogeneity,
+    )
+    hae_params = count_parameters(hae)
+    stdae_hidden = compute_matched_hidden_dim(
+        hae_params, config.D, config.m, config.hidden_layers,
+    )
+    stdae = StandardAutoencoder(
+        D=config.D,
+        m=config.m,
+        hidden_dim=stdae_hidden,
+        hidden_layers=config.hidden_layers,
+    )
+    print(
+        f"  HAE  hidden_dim={config.hidden_dim:4d}  params={hae_params:>10,}\n"
+        f"  AE   hidden_dim={stdae_hidden:4d}  params={count_parameters(stdae):>10,}"
+    )
     return {
-        "HomogeneousAE": HomogeneousAutoencoder(
-            D=config.D,
-            m=config.m,
-            hidden_dim=config.hidden_dim,
-            hidden_layers=config.hidden_layers,
-            p_homogeneity=config.p_homogeneity,
-        ),
-        "StandardAE": StandardAutoencoder(
-            D=config.D,
-            m=config.m,
-            hidden_dim=config.hidden_dim,
-            hidden_layers=config.hidden_layers,
-        ),
+        "HomogeneousAE": hae,
+        "StandardAE": stdae,
         "PCA": PCABaseline(D=config.D, m=config.m),
     }
 

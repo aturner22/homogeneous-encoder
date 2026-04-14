@@ -15,8 +15,8 @@ class TrainConfig:
     n_test: int = 5000
 
     batch_size: int = 512
-    epochs: int = 500
-    patience: int = 50
+    epochs: int = 2000
+    patience: int = 100
     learning_rate: float = 1e-3
 
     hidden_dim: int = 256
@@ -24,6 +24,19 @@ class TrainConfig:
 
     p_homogeneity: float = 1.0
     lambda_cor: float = 0.1
+
+    # Adaptive lambda ratchet (False = fixed lambda, backward compat)
+    adaptive_lambda: bool = False
+    lambda_growth: float = 1.10
+    lambda_decay: float = 0.95
+    lambda_max: float = 1.0
+    recon_tolerance: float = 0.50
+    ratchet_ema: float = 0.1
+    lambda_warmup: int = 50
+    checkpoint_metric: str = "val_total"
+
+    # Gradient clipping (0 = disabled)
+    grad_clip: float = 1.0
 
     num_seeds: int = 1
 
@@ -52,6 +65,8 @@ class CurvedSurfaceConfig(TrainConfig):
     p_homogeneity: float = 2.0
     lambda_cor: float = 0.1
 
+    adaptive_lambda: bool = True
+
 
 @dataclass
 class FlexibleToyConfig(TrainConfig):
@@ -67,6 +82,8 @@ class FlexibleToyConfig(TrainConfig):
 
     p_homogeneity: float = 1.0
     lambda_cor: float = 0.1
+
+    adaptive_lambda: bool = True
 
 
 def ensure_output_dir(config: TrainConfig) -> Path:

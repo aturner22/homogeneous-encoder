@@ -43,11 +43,14 @@ def _run_epoch(
     loss_fn: LossFn,
     *,
     train: bool,
+    lambda_cor_override: float | None = None,
 ) -> Dict[str, float]:
     model.train(train)
     totals: List[float] = []
     recons: List[float] = []
     penalties: List[float] = []
+
+    effective_lambda = lambda_cor_override if lambda_cor_override is not None else config.lambda_cor
 
     with torch.set_grad_enabled(train):
         indices = torch.randperm(len(data)) if train else torch.arange(len(data))
@@ -56,9 +59,13 @@ def _run_epoch(
             if train:
                 optimizer.zero_grad(set_to_none=True)
             forward_pass = model(batch)
-            losses = loss_fn(batch, forward_pass, config.lambda_cor)
+            losses = loss_fn(batch, forward_pass, effective_lambda)
             if train:
                 losses["total"].backward()
+                if config.grad_clip > 0:
+                    torch.nn.utils.clip_grad_norm_(
+                        model.parameters(), max_norm=config.grad_clip
+                    )
                 optimizer.step()
             totals.append(float(losses["total"].item()))
             recons.append(float(losses["reconstruction"].item()))
@@ -92,20 +99,69 @@ def train(
         "val_total": [],
         "val_reconstruction": [],
         "val_penalty": [],
+        "lambda_eff": [],
     }
 
-    best_val_total = float("inf")
+    # Checkpoint metric: "val_total" (legacy) or "val_reconstruction"
+    checkpoint_key = "reconstruction" if config.checkpoint_metric == "val_reconstruction" else "total"
+
+    # Adaptive lambda state: warmup phase (lambda=0) then growth phase
+    if config.adaptive_lambda:
+        lambda_eff = 0.0
+        ema_recon = None
+        baseline_recon = None  # set at end of warmup
+        warmup_epochs = int(getattr(config, "lambda_warmup", 50))
+    else:
+        lambda_eff = config.lambda_cor
+        ema_recon = None
+        baseline_recon = None
+        warmup_epochs = 0
+
+    best_val_metric = float("inf")
     best_state = None
     epochs_without_improvement = 0
     patience = int(getattr(config, "patience", 0))
 
     for epoch in range(1, config.epochs + 1):
         train_metrics = _run_epoch(
-            model, train_data, optimizer, config, loss_fn, train=True
+            model, train_data, optimizer, config, loss_fn,
+            train=True, lambda_cor_override=lambda_eff,
         )
         val_metrics = _run_epoch(
-            model, val_data, optimizer, config, loss_fn, train=False
+            model, val_data, optimizer, config, loss_fn,
+            train=False, lambda_cor_override=lambda_eff,
         )
+
+        # Adaptive lambda: warmup then grow/decay relative to fixed baseline
+        if config.adaptive_lambda:
+            raw_recon = val_metrics["reconstruction"]
+            alpha_ema = config.ratchet_ema
+            if ema_recon is None:
+                ema_recon = raw_recon
+            else:
+                ema_recon = alpha_ema * raw_recon + (1 - alpha_ema) * ema_recon
+
+            if baseline_recon is None:
+                # Warmup phase: lambda stays at 0, pure reconstruction
+                if epoch >= warmup_epochs:
+                    baseline_recon = ema_recon
+                    lambda_eff = 1e-4
+                    # Reset early-stopping so penalty phase gets fair patience
+                    best_val_metric = float("inf")
+                    epochs_without_improvement = 0
+                    if verbose:
+                        print(
+                            f"  [warmup done at epoch {epoch}] "
+                            f"baseline_recon={baseline_recon:.5f}, "
+                            f"starting penalty phase"
+                        )
+            else:
+                # Growth phase: grow when recon is within tolerance of baseline
+                if ema_recon <= baseline_recon * (1 + config.recon_tolerance):
+                    lambda_eff = min(config.lambda_max,
+                                     lambda_eff * config.lambda_growth)
+                else:
+                    lambda_eff = lambda_eff * config.lambda_decay
 
         history["epoch"].append(epoch)
         history["train_total"].append(train_metrics["total"])
@@ -114,15 +170,19 @@ def train(
         history["val_total"].append(val_metrics["total"])
         history["val_reconstruction"].append(val_metrics["reconstruction"])
         history["val_penalty"].append(val_metrics["penalty"])
+        history["lambda_eff"].append(lambda_eff)
 
-        if val_metrics["total"] < best_val_total:
-            best_val_total = val_metrics["total"]
+        # Checkpointing on the chosen metric
+        val_checkpoint = val_metrics[checkpoint_key]
+        if val_checkpoint < best_val_metric:
+            best_val_metric = val_checkpoint
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
             epochs_without_improvement = 0
         else:
             epochs_without_improvement += 1
 
         if verbose and (epoch == 1 or epoch % 20 == 0 or epoch == config.epochs):
+            lam_str = f", λ={lambda_eff:.2e}" if config.adaptive_lambda else ""
             print(
                 f"  epoch {epoch:3d} | "
                 f"train {train_metrics['total']:.5f} "
@@ -131,6 +191,7 @@ def train(
                 f"val {val_metrics['total']:.5f} "
                 f"(recon {val_metrics['reconstruction']:.5f}, "
                 f"pen {val_metrics['penalty']:.5f})"
+                f"{lam_str}"
             )
 
         if patience > 0 and epochs_without_improvement >= patience:
@@ -167,4 +228,5 @@ def fit_pca_baseline(
         "val_total": [val_recon],
         "val_reconstruction": [val_recon],
         "val_penalty": [0.0],
+        "lambda_eff": [0.0],
     }

@@ -1,13 +1,7 @@
 """Simple, single-panel publication plots.
 
-Inspired by ``minimal_p_homogeneous_encoder.py``: no custom rc_context,
-no module-level style wrapper, one figure per saved PNG, log axes where
-they help, dashed reference lines where they clarify. Drivers import the
-``save_*`` primitives directly and save one PNG per separation.
-
-The only composite figures are:
-- ``plot_curved_surface_diagnostic`` (exp01, inherently a 2x2 of 3-D views)
-- ``plot_training_history`` (diagnostic only, not a paper figure)
+2D plots use plotnine (ggplot2 grammar of graphics). The two 3D scatter
+functions remain in matplotlib because plotnine has no 3D support.
 """
 
 from __future__ import annotations
@@ -22,10 +16,41 @@ matplotlib.use("Agg")
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from plotnine import (
+    aes,
+    annotate,
+    coord_cartesian,
+    facet_wrap,
+    geom_col,
+    geom_hline,
+    geom_line,
+    geom_point,
+    geom_ribbon,
+    ggplot,
+    ggsave,
+    labs,
+    scale_color_manual,
+    scale_fill_manual,
+    scale_linetype_manual,
+    scale_shape_manual,
+    scale_x_log10,
+    scale_y_log10,
+    theme,
+    theme_bw,
+    element_blank,
+    element_line,
+    element_text,
+)
 
 
-def _apply_aesthetic() -> None:
-    """Quiet serif look. Called once on module import."""
+# ---------------------------------------------------------------------------
+# Aesthetic constants
+# ---------------------------------------------------------------------------
+
+
+def _apply_mpl_aesthetic() -> None:
+    """Quiet serif look for the matplotlib 3D plots."""
     mpl.rcParams.update({
         "font.family": "serif",
         "font.serif": ["STIXGeneral", "Computer Modern Roman", "DejaVu Serif"],
@@ -53,7 +78,7 @@ def _apply_aesthetic() -> None:
     })
 
 
-_apply_aesthetic()
+_apply_mpl_aesthetic()
 
 
 MODEL_COLORS: Dict[str, str] = {
@@ -73,7 +98,28 @@ MODEL_MARKERS: Dict[str, str] = {
 }
 
 _DPI = 220
-_FIGSIZE = (6.0, 4.0)
+
+# plotnine theme for publication-quality 2D plots
+THEME_PUBLICATION = (
+    theme_bw()
+    + theme(
+        text=element_text(family="serif", size=11),
+        plot_title=element_text(size=12),
+        panel_grid_major=element_line(size=0.5, colour="#cccccc"),
+        panel_grid_minor=element_blank(),
+        legend_background=element_blank(),
+        legend_key=element_blank(),
+    )
+)
+
+_MODEL_ORDER = ["HAE", "AE", "PCA"]
+_LABEL_COLORS: Dict[str, str] = {"HAE": "#d62728", "AE": "#1f77b4", "PCA": "#2ca02c"}
+_LABEL_SHAPES: Dict[str, str] = {"HAE": "o", "AE": "s", "PCA": "^"}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 
 def _color(name: str) -> str:
@@ -88,14 +134,34 @@ def _marker(name: str) -> str:
     return MODEL_MARKERS.get(name, "o")
 
 
+def _ordered_labels(present) -> list:
+    """Model labels present in data, in canonical order."""
+    present = set(present)
+    return [m for m in _MODEL_ORDER if m in present]
+
+
+def _col_vals(labels: Sequence[str]) -> dict:
+    return {m: _LABEL_COLORS.get(m, "#666666") for m in labels}
+
+
+def _shp_vals(labels: Sequence[str]) -> dict:
+    return {m: _LABEL_SHAPES.get(m, "o") for m in labels}
+
+
+def _save_gg(p, path: Path, width: float = 6.0, height: float = 4.0) -> None:
+    ggsave(p, filename=str(path), width=width, height=height,
+           dpi=_DPI, verbose=False)
+
+
 def _finish(fig, output_path: Path) -> None:
+    """Save a matplotlib figure (3D plots only)."""
     fig.tight_layout()
     fig.savefig(output_path, dpi=_DPI, bbox_inches="tight")
     plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
-# Single-panel primitives (one PNG each)
+# 2D plots (plotnine)
 # ---------------------------------------------------------------------------
 
 
@@ -106,42 +172,39 @@ def save_homogeneity_scan(
     precision_floor: float = 1e-10,
     title: Optional[str] = None,
 ) -> None:
-    """Encoder homogeneity residual vs scale lambda (log-log).
-
-    ``scan_by_model[name]`` is a dict with keys ``scales`` and
-    ``relative_residual`` produced by ``lib.metrics.homogeneity_scan``.
-    Only autoencoder models are plotted (PCA is analytically
-    1-homogeneous and has no scan entry).
-    """
-    fig, ax = plt.subplots(figsize=_FIGSIZE)
+    """Encoder homogeneity residual vs scale lambda (log-log)."""
+    dfs: list[pd.DataFrame] = []
     for name, scan in scan_by_model.items():
         scales = np.asarray(scan["scales"], dtype=np.float64)
         residuals = np.asarray(scan["relative_residual"], dtype=np.float64)
         plotted = np.maximum(residuals, precision_floor * 0.1)
-        ax.plot(
-            scales,
-            plotted,
-            color=_color(name),
-            marker=_marker(name),
-            markersize=4.0,
-            linewidth=1.8,
-            label=_label(name),
-        )
-    ax.axhline(
-        precision_floor,
-        linestyle="--",
-        color="#555555",
-        linewidth=1.0,
-        label="precision floor",
+        dfs.append(pd.DataFrame({
+            "scale": scales, "residual": plotted, "model": _label(name),
+        }))
+
+    df = pd.concat(dfs, ignore_index=True)
+    labels = _ordered_labels(df["model"].unique())
+    df["model"] = pd.Categorical(df["model"], categories=labels, ordered=True)
+
+    p = (
+        ggplot(df, aes("scale", "residual", color="model", shape="model"))
+        + geom_line(size=1.8)
+        + geom_point(size=3)
+        + geom_hline(yintercept=precision_floor, linetype="dashed",
+                     color="#555555", size=0.8)
+        + scale_x_log10()
+        + scale_y_log10()
+        + scale_color_manual(values=_col_vals(labels))
+        + scale_shape_manual(values=_shp_vals(labels))
+        + labs(x=r"scale $\lambda$",
+               y=(r"$\|f(\lambda x) - \lambda^p f(x)\|^2"
+                  r" / \|\lambda^p f(x)\|^2$"),
+               color="", shape="")
+        + THEME_PUBLICATION
     )
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel(r"scale $\lambda$")
-    ax.set_ylabel(r"$\|f(\lambda x) - \lambda^p f(x)\|^2 / \|\lambda^p f(x)\|^2$")
     if title:
-        ax.set_title(title)
-    ax.legend(loc="best")
-    _finish(fig, output_path)
+        p = p + labs(title=title)
+    _save_gg(p, output_path)
 
 
 def save_latent_hill_curves(
@@ -153,54 +216,61 @@ def save_latent_hill_curves(
     p: float = 1.0,
     title: Optional[str] = None,
 ) -> None:
-    """Hill estimator curves on the latent radii, one line per model.
-
-    ``latent_curves_by_model[name]`` is a dict with keys ``k`` and
-    ``alpha_hat``. ``ambient_curve`` (optional) is plotted in black as
-    an extra reference line. A horizontal dashed line is drawn at
-    ``alpha_ambient / p`` when ``alpha_ambient`` is supplied — this is
-    the Proposition 1 target computed from the data itself, no
-    dependence on an unobservable true alpha.
-    """
-    fig, ax = plt.subplots(figsize=_FIGSIZE)
+    """Hill estimator curves on the latent radii, one line per model."""
+    dfs: list[pd.DataFrame] = []
     for name, curve in latent_curves_by_model.items():
         k_values = np.asarray(curve["k"], dtype=np.float64)
         alpha_hat = np.asarray(curve["alpha_hat"], dtype=np.float64)
-        ax.plot(
-            k_values,
-            alpha_hat,
-            color=_color(name),
-            linewidth=1.8,
-            label=_label(name),
-        )
+        dfs.append(pd.DataFrame({
+            "k": k_values, "alpha_hat": alpha_hat, "model": _label(name),
+        }))
+
     if ambient_curve is not None:
         k_amb = np.asarray(ambient_curve["k"], dtype=np.float64)
         alpha_amb = np.asarray(ambient_curve["alpha_hat"], dtype=np.float64)
-        ax.plot(
-            k_amb,
-            alpha_amb,
-            color="#222222",
-            linestyle=":",
-            linewidth=1.3,
-            label="ambient",
-        )
+        dfs.append(pd.DataFrame({
+            "k": k_amb, "alpha_hat": alpha_amb, "model": "ambient",
+        }))
+
+    df = pd.concat(dfs, ignore_index=True)
+    all_labels = _ordered_labels(df["model"].unique())
+    if "ambient" in df["model"].values:
+        all_labels = all_labels + ["ambient"]
+    df["model"] = pd.Categorical(df["model"], categories=all_labels, ordered=True)
+
+    colors = _col_vals(all_labels)
+    colors["ambient"] = "#222222"
+    linetypes = {m: "solid" for m in all_labels}
+    linetypes["ambient"] = "dotted"
+
+    y_max = float(df["alpha_hat"].max()) * 1.15
+
+    p_plot = (
+        ggplot(df, aes("k", "alpha_hat", color="model", linetype="model"))
+        + geom_line(size=1.5)
+        + scale_x_log10()
+        + scale_color_manual(values=colors)
+        + scale_linetype_manual(values=linetypes)
+        + coord_cartesian(ylim=(0, y_max))
+        + labs(x=r"order statistic $k$",
+               y=r"latent Hill estimate $\hat\alpha_k$",
+               color="", linetype="")
+        + THEME_PUBLICATION
+    )
+
     if alpha_ambient is not None:
         target = float(alpha_ambient) / float(p)
-        ax.axhline(
-            target,
-            color="#222222",
-            linestyle="--",
-            linewidth=1.0,
-            label=rf"$\hat\alpha_{{\mathrm{{amb}}}}/p = {target:.2f}$",
+        p_plot = (
+            p_plot
+            + geom_hline(yintercept=target, linetype="dashed",
+                         color="#222222", size=0.8)
+            + annotate("text", x=float(df["k"].max()), y=target,
+                       label=rf"$\hat\alpha_{{\mathrm{{amb}}}}/p = {target:.2f}$",
+                       ha="right", va="bottom", size=9, color="#444444")
         )
-    ax.set_xscale("log")
-    ax.set_xlabel(r"order statistic $k$")
-    ax.set_ylabel(r"latent Hill estimate $\hat\alpha_k$")
     if title:
-        ax.set_title(title)
-    ax.set_ylim(bottom=0.0)
-    ax.legend(loc="best")
-    _finish(fig, output_path)
+        p_plot = p_plot + labs(title=title)
+    _save_gg(p_plot, output_path)
 
 
 def save_extrapolation_curve(
@@ -210,27 +280,34 @@ def save_extrapolation_curve(
     title: Optional[str] = None,
 ) -> None:
     """Reconstruction MSE at increasing scale multipliers (log-log)."""
-    fig, ax = plt.subplots(figsize=_FIGSIZE)
+    dfs: list[pd.DataFrame] = []
     for name, extrap in extrap_by_model.items():
         scales = np.asarray(extrap["scales"], dtype=np.float64)
-        mse = np.asarray(extrap["mse"], dtype=np.float64)
-        ax.plot(
-            scales,
-            np.maximum(mse, 1e-12),
-            color=_color(name),
-            marker=_marker(name),
-            markersize=4.0,
-            linewidth=1.8,
-            label=_label(name),
-        )
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel(r"scale multiplier $\lambda$")
-    ax.set_ylabel(r"test MSE $\|x_\lambda - \hat{x}_\lambda\|^2$")
+        mse = np.maximum(np.asarray(extrap["mse"], dtype=np.float64), 1e-12)
+        dfs.append(pd.DataFrame({
+            "scale": scales, "mse": mse, "model": _label(name),
+        }))
+
+    df = pd.concat(dfs, ignore_index=True)
+    labels = _ordered_labels(df["model"].unique())
+    df["model"] = pd.Categorical(df["model"], categories=labels, ordered=True)
+
+    p = (
+        ggplot(df, aes("scale", "mse", color="model", shape="model"))
+        + geom_line(size=1.8)
+        + geom_point(size=3)
+        + scale_x_log10()
+        + scale_y_log10()
+        + scale_color_manual(values=_col_vals(labels))
+        + scale_shape_manual(values=_shp_vals(labels))
+        + labs(x=r"scale multiplier $\lambda$",
+               y=r"test MSE $\|x_\lambda - \hat{x}_\lambda\|^2$",
+               color="", shape="")
+        + THEME_PUBLICATION
+    )
     if title:
-        ax.set_title(title)
-    ax.legend(loc="best")
-    _finish(fig, output_path)
+        p = p + labs(title=title)
+    _save_gg(p, output_path)
 
 
 def save_binned_recon_error(
@@ -240,7 +317,7 @@ def save_binned_recon_error(
     title: Optional[str] = None,
 ) -> None:
     """Binned reconstruction MSE as a function of ambient radius."""
-    fig, ax = plt.subplots(figsize=_FIGSIZE)
+    dfs: list[pd.DataFrame] = []
     for name, binned in binned_by_model.items():
         centers = np.asarray(binned["centers"], dtype=np.float64)
         median = np.asarray(binned["median"], dtype=np.float64)
@@ -248,23 +325,33 @@ def save_binned_recon_error(
         valid = (counts >= 5) & np.isfinite(median)
         if not np.any(valid):
             continue
-        ax.plot(
-            centers[valid],
-            median[valid],
-            color=_color(name),
-            marker=_marker(name),
-            markersize=4.0,
-            linewidth=1.8,
-            label=_label(name),
-        )
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel(r"ambient radius $\|x\|$")
-    ax.set_ylabel(r"median $\|x - \hat{x}\|^2$ per bin")
+        dfs.append(pd.DataFrame({
+            "center": centers[valid], "median": median[valid],
+            "model": _label(name),
+        }))
+
+    if not dfs:
+        return
+    df = pd.concat(dfs, ignore_index=True)
+    labels = _ordered_labels(df["model"].unique())
+    df["model"] = pd.Categorical(df["model"], categories=labels, ordered=True)
+
+    p = (
+        ggplot(df, aes("center", "median", color="model", shape="model"))
+        + geom_line(size=1.8)
+        + geom_point(size=3)
+        + scale_x_log10()
+        + scale_y_log10()
+        + scale_color_manual(values=_col_vals(labels))
+        + scale_shape_manual(values=_shp_vals(labels))
+        + labs(x=r"ambient radius $\|x\|$",
+               y=r"median $\|x - \hat{x}\|^2$ per bin",
+               color="", shape="")
+        + THEME_PUBLICATION
+    )
     if title:
-        ax.set_title(title)
-    ax.legend(loc="best")
-    _finish(fig, output_path)
+        p = p + labs(title=title)
+    _save_gg(p, output_path)
 
 
 def save_sweep_metric(
@@ -280,59 +367,58 @@ def save_sweep_metric(
     xscale: Optional[str] = None,
     reference_curve: Optional[Tuple[Sequence[float], Sequence[float], str]] = None,
 ) -> None:
-    """Single-panel sweep plot with optional shaded multi-seed bands.
-
-    ``series_by_model[name][metric_key]`` must be a dict with ``mean``
-    and ``std`` arrays whose length matches ``parameter_values``. When
-    ``std`` is non-zero a shaded band is drawn.
-    """
-    fig, ax = plt.subplots(figsize=_FIGSIZE)
+    """Single-panel sweep plot with optional shaded multi-seed bands."""
     parameter_array = np.asarray(parameter_values, dtype=np.float64)
+    dfs: list[pd.DataFrame] = []
     for name, metric_series in series_by_model.items():
         cell = metric_series.get(metric_key)
         if cell is None:
             continue
         mean = np.asarray(cell["mean"], dtype=np.float64)
         std = np.asarray(cell["std"], dtype=np.float64)
-        color = _color(name)
-        ax.plot(
-            parameter_array,
-            mean,
-            color=color,
-            marker=_marker(name),
-            markersize=4.5,
-            linewidth=1.8,
-            label=_label(name),
-        )
-        if np.any(std > 0.0):
-            ax.fill_between(
-                parameter_array,
-                mean - std,
-                mean + std,
-                color=color,
-                alpha=0.2,
-                linewidth=0,
-            )
+        dfs.append(pd.DataFrame({
+            "param": parameter_array, "mean": mean,
+            "lower": mean - std, "upper": mean + std,
+            "model": _label(name),
+        }))
+
+    df = pd.concat(dfs, ignore_index=True)
+    labels = _ordered_labels(df["model"].unique())
+    df["model"] = pd.Categorical(df["model"], categories=labels, ordered=True)
+
+    p = (
+        ggplot(df, aes("param", "mean", color="model"))
+        + geom_ribbon(aes(ymin="lower", ymax="upper", fill="model"),
+                      alpha=0.2, colour="none")
+        + geom_line(size=1.8)
+        + geom_point(aes(shape="model"), size=3.5)
+        + scale_color_manual(values=_col_vals(labels))
+        + scale_fill_manual(values=_col_vals(labels))
+        + scale_shape_manual(values=_shp_vals(labels))
+        + labs(x=xlabel, y=ylabel, color="", shape="", fill="")
+        + THEME_PUBLICATION
+    )
+    if xscale == "log":
+        p = p + scale_x_log10()
+    if yscale == "log":
+        p = p + scale_y_log10()
+
     if reference_curve is not None:
         x_ref, y_ref, label_ref = reference_curve
-        ax.plot(
-            np.asarray(x_ref, dtype=np.float64),
-            np.asarray(y_ref, dtype=np.float64),
-            color="#222222",
-            linestyle="--",
-            linewidth=1.1,
-            label=label_ref,
-        )
-    if xscale:
-        ax.set_xscale(xscale)
-    if yscale:
-        ax.set_yscale(yscale)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+        ref_df = pd.DataFrame({
+            "param": np.asarray(x_ref, dtype=np.float64),
+            "mean": np.asarray(y_ref, dtype=np.float64),
+            "reference": label_ref,
+        })
+        p = (p
+             + geom_line(data=ref_df, mapping=aes("param", "mean",
+                         linetype="reference"),
+                         inherit_aes=False, color="#222222", size=1.0)
+             + scale_linetype_manual(values={label_ref: "dashed"}, name=""))
+
     if title:
-        ax.set_title(title)
-    ax.legend(loc="best")
-    _finish(fig, output_path)
+        p = p + labs(title=title)
+    _save_gg(p, output_path)
 
 
 def save_latent_vs_ambient_radius(
@@ -343,24 +429,17 @@ def save_latent_vs_ambient_radius(
     title: Optional[str] = None,
     max_points: int = 4000,
 ) -> None:
-    """Log-log scatter of latent radius vs ambient radius, one cloud per model.
-
-    ``radii_by_model[name]`` is a dict with keys ``ambient`` and ``latent``.
-    For an exactly ``p``-homogeneous encoder Proposition 1 predicts
-    ``||z|| propto ||x||^p``, i.e. a straight line of slope ``p`` on log-log.
-    A dashed reference line at that slope is drawn through the HAE bulk so
-    deviations are visible at a glance.
-    """
-    fig, ax = plt.subplots(figsize=_FIGSIZE)
+    """Log-log scatter of latent radius vs ambient radius, one cloud per model."""
     rng = np.random.default_rng(0)
-
+    dfs: list[pd.DataFrame] = []
     anchor_point: Optional[Tuple[float, float]] = None
     all_ambient: List[np.ndarray] = []
 
     for name, radii in radii_by_model.items():
         ambient = np.asarray(radii["ambient"], dtype=np.float64)
         latent = np.asarray(radii["latent"], dtype=np.float64)
-        mask = (ambient > 0) & (latent > 0) & np.isfinite(ambient) & np.isfinite(latent)
+        mask = ((ambient > 0) & (latent > 0)
+                & np.isfinite(ambient) & np.isfinite(latent))
         ambient = ambient[mask]
         latent = latent[mask]
         if ambient.size == 0:
@@ -373,16 +452,10 @@ def save_latent_vs_ambient_radius(
         else:
             ambient_plot = ambient
             latent_plot = latent
-        ax.scatter(
-            ambient_plot,
-            latent_plot,
-            s=6,
-            alpha=0.25,
-            color=_color(name),
-            label=_label(name),
-            linewidths=0,
-            rasterized=True,
-        )
+        dfs.append(pd.DataFrame({
+            "ambient": ambient_plot, "latent": latent_plot,
+            "model": _label(name),
+        }))
         if name == "HomogeneousAE" and anchor_point is None:
             bulk_mask = ambient <= np.quantile(ambient, 0.5)
             if np.any(bulk_mask):
@@ -391,28 +464,37 @@ def save_latent_vs_ambient_radius(
                     float(np.median(latent[bulk_mask])),
                 )
 
+    df = pd.concat(dfs, ignore_index=True)
+    labels = _ordered_labels(df["model"].unique())
+    df["model"] = pd.Categorical(df["model"], categories=labels, ordered=True)
+
+    p_plot = (
+        ggplot(df, aes("ambient", "latent", color="model"))
+        + geom_point(size=0.5, alpha=0.25, stroke=0)
+        + scale_x_log10()
+        + scale_y_log10()
+        + scale_color_manual(values=_col_vals(labels))
+        + labs(x=r"ambient radius $\|x\|$",
+               y=r"latent radius $\|z\|$",
+               color="")
+        + THEME_PUBLICATION
+    )
+
     if all_ambient and anchor_point is not None:
         ambient_cat = np.concatenate(all_ambient)
-        x_ref = np.geomspace(float(ambient_cat.min()), float(ambient_cat.max()), 100)
+        x_ref = np.geomspace(float(ambient_cat.min()),
+                             float(ambient_cat.max()), 100)
         x0, y0 = anchor_point
         y_ref = y0 * (x_ref / x0) ** float(p)
-        ax.plot(
-            x_ref,
-            y_ref,
-            color="#222222",
-            linestyle="--",
-            linewidth=1.1,
-            label=rf"slope $p = {p:g}$",
+        ref_df = pd.DataFrame({"ambient": x_ref, "latent": y_ref})
+        p_plot = p_plot + geom_line(
+            data=ref_df, mapping=aes("ambient", "latent"),
+            inherit_aes=False, color="#222222", linetype="dashed", size=0.9,
         )
 
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel(r"ambient radius $\|x\|$")
-    ax.set_ylabel(r"latent radius $\|z\|$")
     if title:
-        ax.set_title(title)
-    ax.legend(loc="best", markerscale=2.0)
-    _finish(fig, output_path)
+        p_plot = p_plot + labs(title=title)
+    _save_gg(p_plot, output_path)
 
 
 def save_correction_magnitude_scatter(
@@ -423,29 +505,14 @@ def save_correction_magnitude_scatter(
     n_quantiles: int = 16,
     title: Optional[str] = None,
 ) -> None:
-    """HAE-only: ``||delta||`` vs latent radius with a binned-mean overlay.
-
-    Adapted from ``minimal_p_homogeneous_encoder.py:485-506``. Shows that
-    the decoder correction term vanishes as the latent radius grows,
-    which is the asymptotic-homogeneity condition in the paper.
-    """
-    fig, ax = plt.subplots(figsize=_FIGSIZE)
-
+    """HAE-only: ||delta|| vs latent radius with a binned-mean overlay."""
     rho = np.asarray(latent_radii, dtype=np.float64)
     d = np.asarray(delta_norms, dtype=np.float64)
     mask = (rho > 0) & np.isfinite(rho) & np.isfinite(d)
     rho = rho[mask]
     d = d[mask]
 
-    ax.scatter(
-        rho,
-        d,
-        s=6,
-        alpha=0.25,
-        color=_color("HomogeneousAE"),
-        linewidths=0,
-        rasterized=True,
-    )
+    scatter_df = pd.DataFrame({"rho": rho, "delta": d})
 
     quantiles = np.quantile(rho, np.linspace(0.0, 1.0, n_quantiles))
     centers: List[float] = []
@@ -461,22 +528,23 @@ def save_correction_magnitude_scatter(
             centers.append(float(np.sqrt(max(lower, 1e-12) * max(upper, 1e-12))))
             means.append(float(d[bin_mask].mean()))
 
-    if centers:
-        ax.plot(
-            centers,
-            means,
-            color="#222222",
-            linewidth=2.0,
-            label="binned mean",
-        )
-        ax.legend(loc="best")
+    p = (
+        ggplot(scatter_df, aes("rho", "delta"))
+        + geom_point(size=0.5, alpha=0.25, color=_LABEL_COLORS["HAE"], stroke=0)
+        + scale_x_log10()
+        + labs(x=r"latent radius $\|z\|$",
+               y=r"correction magnitude $\|\delta\|$")
+        + THEME_PUBLICATION
+    )
 
-    ax.set_xscale("log")
-    ax.set_xlabel(r"latent radius $\|z\|$")
-    ax.set_ylabel(r"correction magnitude $\|\delta\|$")
+    if centers:
+        binned_df = pd.DataFrame({"rho": centers, "delta": means})
+        p = p + geom_line(data=binned_df, mapping=aes("rho", "delta"),
+                          inherit_aes=False, color="#222222", size=1.8)
+
     if title:
-        ax.set_title(title)
-    _finish(fig, output_path)
+        p = p + labs(title=title)
+    _save_gg(p, output_path)
 
 
 def save_correction_by_regime(
@@ -486,13 +554,7 @@ def save_correction_by_regime(
     *,
     title: Optional[str] = None,
 ) -> None:
-    """HAE-only: bar chart of mean ``||delta||`` by latent-radius percentile.
-
-    Adapted from ``minimal_p_homogeneous_encoder.py:508-537``. Bars should
-    decrease from the bulk regime to the far tail.
-    """
-    fig, ax = plt.subplots(figsize=_FIGSIZE)
-
+    """HAE-only: bar chart of mean ||delta|| by latent-radius percentile."""
     rho = np.asarray(latent_radii, dtype=np.float64)
     d = np.asarray(delta_norms, dtype=np.float64)
     mask = (rho > 0) & np.isfinite(rho) & np.isfinite(d)
@@ -502,43 +564,48 @@ def save_correction_by_regime(
     percentile_labels = [50, 75, 90, 95, 99]
     percentile_values = np.percentile(rho, percentile_labels)
 
-    means: List[float] = []
-    labels: List[str] = []
+    bar_means: List[float] = []
+    bar_labels: List[str] = []
 
     bulk_mask = rho <= percentile_values[0]
     if np.any(bulk_mask):
-        means.append(float(d[bulk_mask].mean()))
-        labels.append("≤50%")
+        bar_means.append(float(d[bulk_mask].mean()))
+        bar_labels.append("\u226450%")
 
     for i in range(1, len(percentile_labels)):
         lower = percentile_values[i - 1]
         upper = percentile_values[i]
         regime_mask = (rho > lower) & (rho <= upper)
         if np.any(regime_mask):
-            means.append(float(d[regime_mask].mean()))
-            labels.append(f"{percentile_labels[i - 1]}–{percentile_labels[i]}%")
+            bar_means.append(float(d[regime_mask].mean()))
+            bar_labels.append(
+                f"{percentile_labels[i - 1]}\u2013{percentile_labels[i]}%")
 
     tail_mask = rho > percentile_values[-1]
     if np.any(tail_mask):
-        means.append(float(d[tail_mask].mean()))
-        labels.append(">99%")
+        bar_means.append(float(d[tail_mask].mean()))
+        bar_labels.append(">99%")
 
-    positions = np.arange(len(means))
-    ax.bar(
-        positions,
-        means,
-        color=_color("HomogeneousAE"),
-        alpha=0.85,
-        edgecolor="#222222",
-        linewidth=0.6,
+    df = pd.DataFrame({"regime": bar_labels, "mean_delta": bar_means})
+    df["regime"] = pd.Categorical(df["regime"], categories=bar_labels, ordered=True)
+
+    p = (
+        ggplot(df, aes("regime", "mean_delta"))
+        + geom_col(fill=_LABEL_COLORS["HAE"], alpha=0.85,
+                   colour="#222222", size=0.4)
+        + labs(x="latent-radius percentile regime",
+               y=r"mean $\|\delta\|$")
+        + THEME_PUBLICATION
+        + theme(axis_text_x=element_text(rotation=15, ha="right"))
     )
-    ax.set_xticks(positions)
-    ax.set_xticklabels(labels, rotation=15)
-    ax.set_ylabel(r"mean $\|\delta\|$")
-    ax.set_xlabel("latent-radius percentile regime")
     if title:
-        ax.set_title(title)
-    _finish(fig, output_path)
+        p = p + labs(title=title)
+    _save_gg(p, output_path)
+
+
+# ---------------------------------------------------------------------------
+# 3D plots (matplotlib — plotnine has no 3D support)
+# ---------------------------------------------------------------------------
 
 
 def save_curved_surface_scatter(
@@ -550,14 +617,11 @@ def save_curved_surface_scatter(
     max_points: int = 2500,
     cmap: str = "viridis",
 ) -> None:
-    """Single 3-D scatter coloured by ambient radius.
-
-    ``color_by`` is an optional (N,) array — defaults to the norms of
-    ``data``. Points are subsampled to ``max_points`` for rendering speed.
-    """
+    """Single 3-D scatter coloured by ambient radius."""
     data = np.asarray(data, dtype=np.float64)
     if data.shape[1] != 3:
-        raise ValueError(f"save_curved_surface_scatter requires D=3, got {data.shape[1]}")
+        raise ValueError(
+            f"save_curved_surface_scatter requires D=3, got {data.shape[1]}")
     if color_by is None:
         color_by = np.linalg.norm(data, axis=1)
     rng = np.random.default_rng(0)
@@ -579,6 +643,125 @@ def save_curved_surface_scatter(
     _finish(fig, output_path)
 
 
+def plot_curved_surface_diagnostic(
+    x: np.ndarray,
+    x_hat_by_model: Mapping[str, np.ndarray],
+    scan_by_model: Mapping[str, Mapping[str, np.ndarray]],
+    output_path: Path,
+) -> None:
+    """Exp01 continuity figure: three 3-D scatters + homogeneity scan."""
+    if x.shape[1] != 3:
+        raise ValueError(
+            "plot_curved_surface_diagnostic is only defined for D=3")
+
+    fig = plt.figure(figsize=(10.0, 8.0))
+    ax_truth = fig.add_subplot(2, 2, 1, projection="3d")
+    ax_hae = fig.add_subplot(2, 2, 2, projection="3d")
+    ax_standard = fig.add_subplot(2, 2, 3, projection="3d")
+    ax_scan = fig.add_subplot(2, 2, 4)
+
+    rng = np.random.default_rng(0)
+    if len(x) > 2500:
+        pick = rng.choice(len(x), size=2500, replace=False)
+        x = x[pick]
+        x_hat_by_model = {k: v[pick] for k, v in x_hat_by_model.items()}
+
+    radii = np.linalg.norm(x, axis=1)
+    panels = [
+        (ax_truth, x, "truth"),
+        (ax_hae, x_hat_by_model.get("HomogeneousAE"), "HomogeneousAE"),
+        (ax_standard, x_hat_by_model.get("StandardAE"), "StandardAE"),
+    ]
+    for ax, data, name in panels:
+        if data is None:
+            continue
+        ax.scatter(
+            data[:, 0], data[:, 1], data[:, 2],
+            c=radii, cmap="viridis", s=4, alpha=0.55, linewidths=0,
+        )
+        title_name = "truth" if name == "truth" else _label(name)
+        ax.set_title(title_name, fontsize=10)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_zticks([])
+
+    for name, scan in scan_by_model.items():
+        scales = np.asarray(scan["scales"], dtype=np.float64)
+        residuals = np.asarray(scan["relative_residual"], dtype=np.float64)
+        plotted = np.maximum(residuals, 1e-13)
+        ax_scan.plot(
+            scales, plotted,
+            color=_color(name), marker=_marker(name), markersize=4.0,
+            linewidth=1.6, label=_label(name),
+        )
+    ax_scan.axhline(1e-10, linestyle="--", color="#555555", linewidth=0.9)
+    ax_scan.set_xscale("log")
+    ax_scan.set_yscale("log")
+    ax_scan.set_xlabel(r"scale $\lambda$")
+    ax_scan.set_ylabel(r"rel. homogeneity residual")
+    ax_scan.set_title("encoder homogeneity", fontsize=10)
+    ax_scan.grid(True, alpha=0.3)
+    ax_scan.legend(loc="best", fontsize=8)
+
+    _finish(fig, output_path)
+
+
+# ---------------------------------------------------------------------------
+# Diagnostic (not paper figures)
+# ---------------------------------------------------------------------------
+
+
+def plot_training_history(
+    histories: Mapping[str, Dict[str, List[float]]],
+    output_path: Path,
+) -> None:
+    """Diagnostic training curves (not a paper figure)."""
+    rows: list[dict] = []
+    for name, history in histories.items():
+        lbl = _label(name)
+        epochs = history["epoch"]
+        for i, ep in enumerate(epochs):
+            rows.append({"epoch": ep, "value": history["train_total"][i],
+                         "model": lbl, "split": "train",
+                         "panel": "Total loss"})
+            rows.append({"epoch": ep, "value": history["val_total"][i],
+                         "model": lbl, "split": "val",
+                         "panel": "Total loss"})
+            rows.append({"epoch": ep,
+                         "value": history["train_reconstruction"][i],
+                         "model": lbl, "split": "train",
+                         "panel": "Reconstruction MSE"})
+
+    df = pd.DataFrame(rows)
+    labels = _ordered_labels(df["model"].unique())
+    df["model"] = pd.Categorical(df["model"], categories=labels, ordered=True)
+    df["split"] = pd.Categorical(df["split"],
+                                 categories=["train", "val"], ordered=True)
+    df["panel"] = pd.Categorical(
+        df["panel"],
+        categories=["Total loss", "Reconstruction MSE"],
+        ordered=True,
+    )
+
+    p = (
+        ggplot(df, aes("epoch", "value", color="model", linetype="split"))
+        + geom_line(size=1.2)
+        + scale_y_log10()
+        + scale_color_manual(values=_col_vals(labels))
+        + scale_linetype_manual(values={"train": "solid", "val": "dotted"})
+        + facet_wrap("~panel", scales="free_y")
+        + labs(x="epoch", y="", color="", linetype="")
+        + THEME_PUBLICATION
+        + theme(legend_position="bottom")
+    )
+    _save_gg(p, output_path, width=12.0, height=4.5)
+
+
+# ---------------------------------------------------------------------------
+# Composite panel orchestrator
+# ---------------------------------------------------------------------------
+
+
 def save_exp02_panel_set(
     point: Mapping[str, Mapping[str, Any]],
     output_dir: Path,
@@ -598,7 +781,8 @@ def save_exp02_panel_set(
     output_dir.mkdir(parents=True, exist_ok=True)
     written: List[Path] = []
 
-    model_names = [n for n in ("HomogeneousAE", "StandardAE", "PCA") if n in point]
+    model_names = [n for n in ("HomogeneousAE", "StandardAE", "PCA")
+                   if n in point]
 
     radii_by_model: Dict[str, Dict[str, np.ndarray]] = {}
     for name in model_names:
@@ -674,104 +858,3 @@ def save_exp02_panel_set(
             written.append(path)
 
     return written
-
-
-# ---------------------------------------------------------------------------
-# Composite figures (only where multi-view is inherent)
-# ---------------------------------------------------------------------------
-
-
-def plot_training_history(
-    histories: Mapping[str, Dict[str, List[float]]],
-    output_path: Path,
-) -> None:
-    """Diagnostic training curves (not a paper figure)."""
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.0))
-    for name, history in histories.items():
-        epochs = np.asarray(history["epoch"])
-        color = _color(name)
-        axes[0].plot(
-            epochs, history["train_total"], color=color, linewidth=1.4,
-            label=f"{_label(name)} train",
-        )
-        axes[0].plot(
-            epochs, history["val_total"], color=color, linestyle=":",
-            linewidth=1.4, label=f"{_label(name)} val",
-        )
-        axes[1].plot(
-            epochs, history["train_reconstruction"], color=color,
-            linewidth=1.4, label=_label(name),
-        )
-    axes[0].set_xlabel("epoch")
-    axes[0].set_ylabel("total loss")
-    axes[0].set_yscale("log")
-    axes[0].grid(True, alpha=0.3)
-    axes[0].legend(loc="best", fontsize=8)
-    axes[1].set_xlabel("epoch")
-    axes[1].set_ylabel("reconstruction MSE")
-    axes[1].set_yscale("log")
-    axes[1].grid(True, alpha=0.3)
-    axes[1].legend(loc="best", fontsize=8)
-    _finish(fig, output_path)
-
-
-def plot_curved_surface_diagnostic(
-    x: np.ndarray,
-    x_hat_by_model: Mapping[str, np.ndarray],
-    scan_by_model: Mapping[str, Mapping[str, np.ndarray]],
-    output_path: Path,
-) -> None:
-    """Exp01 continuity figure: three 3-D scatters + homogeneity scan."""
-    if x.shape[1] != 3:
-        raise ValueError("plot_curved_surface_diagnostic is only defined for D=3")
-
-    fig = plt.figure(figsize=(10.0, 8.0))
-    ax_truth = fig.add_subplot(2, 2, 1, projection="3d")
-    ax_hae = fig.add_subplot(2, 2, 2, projection="3d")
-    ax_standard = fig.add_subplot(2, 2, 3, projection="3d")
-    ax_scan = fig.add_subplot(2, 2, 4)
-
-    rng = np.random.default_rng(0)
-    if len(x) > 2500:
-        pick = rng.choice(len(x), size=2500, replace=False)
-        x = x[pick]
-        x_hat_by_model = {k: v[pick] for k, v in x_hat_by_model.items()}
-
-    radii = np.linalg.norm(x, axis=1)
-    panels = [
-        (ax_truth, x, "truth"),
-        (ax_hae, x_hat_by_model.get("HomogeneousAE"), "HomogeneousAE"),
-        (ax_standard, x_hat_by_model.get("StandardAE"), "StandardAE"),
-    ]
-    for ax, data, name in panels:
-        if data is None:
-            continue
-        ax.scatter(
-            data[:, 0], data[:, 1], data[:, 2],
-            c=radii, cmap="viridis", s=4, alpha=0.55, linewidths=0,
-        )
-        title_name = "truth" if name == "truth" else _label(name)
-        ax.set_title(title_name, fontsize=10)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
-
-    for name, scan in scan_by_model.items():
-        scales = np.asarray(scan["scales"], dtype=np.float64)
-        residuals = np.asarray(scan["relative_residual"], dtype=np.float64)
-        plotted = np.maximum(residuals, 1e-13)
-        ax_scan.plot(
-            scales, plotted,
-            color=_color(name), marker=_marker(name), markersize=4.0,
-            linewidth=1.6, label=_label(name),
-        )
-    ax_scan.axhline(1e-10, linestyle="--", color="#555555", linewidth=0.9)
-    ax_scan.set_xscale("log")
-    ax_scan.set_yscale("log")
-    ax_scan.set_xlabel(r"scale $\lambda$")
-    ax_scan.set_ylabel(r"rel. homogeneity residual")
-    ax_scan.set_title("encoder homogeneity", fontsize=10)
-    ax_scan.grid(True, alpha=0.3)
-    ax_scan.legend(loc="best", fontsize=8)
-
-    _finish(fig, output_path)

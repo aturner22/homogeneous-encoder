@@ -26,6 +26,7 @@ from lib.evaluation import serializable, train_and_evaluate  # noqa: E402
 from lib.models import (  # noqa: E402
     HomogeneousAutoencoder,
     StandardAutoencoder,
+    compute_matched_hidden_dim,
     count_parameters,
 )
 from lib.viz import (  # noqa: E402
@@ -56,21 +57,24 @@ def main() -> None:
     val_data = generate_curved_surface(config.n_val, seed=config.seed + 2)
     test_data = generate_curved_surface(config.n_test, seed=config.seed + 3)
 
-    models = {
-        "HomogeneousAE": HomogeneousAutoencoder(
-            D=3,
-            m=2,
-            hidden_dim=config.hidden_dim,
-            hidden_layers=config.hidden_layers,
-            p_homogeneity=config.p_homogeneity,
-        ),
-        "StandardAE": StandardAutoencoder(
-            D=3,
-            m=2,
-            hidden_dim=config.hidden_dim,
-            hidden_layers=config.hidden_layers,
-        ),
-    }
+    hae = HomogeneousAutoencoder(
+        D=3,
+        m=2,
+        hidden_dim=config.hidden_dim,
+        hidden_layers=config.hidden_layers,
+        p_homogeneity=config.p_homogeneity,
+    )
+    hae_params = count_parameters(hae)
+    stdae_hidden = compute_matched_hidden_dim(
+        hae_params, 3, 2, config.hidden_layers,
+    )
+    stdae = StandardAutoencoder(
+        D=3,
+        m=2,
+        hidden_dim=stdae_hidden,
+        hidden_layers=config.hidden_layers,
+    )
+    models = {"HomogeneousAE": hae, "StandardAE": stdae}
     for name, model in models.items():
         print(f"  {name}: {count_parameters(model):,} parameters")
 

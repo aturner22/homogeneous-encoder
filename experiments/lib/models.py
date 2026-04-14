@@ -253,3 +253,30 @@ class PCABaseline(nn.Module):
 
 def count_parameters(model: nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def compute_matched_hidden_dim(
+    target_params: int, D: int, m: int, hidden_layers: int
+) -> int:
+    """Compute the StdAE hidden_dim whose total params match *target_params*.
+
+    StdAE has two MLPs — encoder(D→m) and decoder(m→D) — each with the
+    same hidden_dim *h* and *hidden_layers* layers.  Total parameters:
+
+        2*(L-1)*h^2 + (2*D + 2*m + 2*L)*h + (D + m)
+
+    We solve the quadratic in *h* and round to the nearest integer.
+    """
+    import math
+
+    L = hidden_layers
+    a = 2 * (L - 1)
+    b = 2 * D + 2 * m + 2 * L
+    c = (D + m) - target_params
+    discriminant = b * b - 4 * a * c
+    if discriminant < 0:
+        raise ValueError(
+            f"No solution for matched hidden_dim: discriminant={discriminant}"
+        )
+    h = (-b + math.sqrt(discriminant)) / (2 * a)
+    return max(1, int(round(h)))
