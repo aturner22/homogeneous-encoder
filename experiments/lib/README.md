@@ -1,24 +1,31 @@
-# `experiments/lib/` — shared library for synthetic-toy experiments
+# `experiments/lib/` — shared library for experiment drivers
 
-Shared training, evaluation, sweep, and visualisation code used by all six
-experiment drivers (`exp01`–`exp06`). The library provides three model
-implementations, a single training loop, a unified evaluation function, a
-parameter-sweep harness, and publication-quality plot primitives.
+Shared training, evaluation, sweep, visualisation, artifact-caching, and
+determinism code used by every experiment driver (`exp01`–`exp07` and
+`climate`). The library provides three model implementations, a single
+training loop, a unified evaluation function, a parameter-sweep harness,
+publication-quality plot primitives, and per-(seed, model) pickle
+caching so figures can be regenerated without retraining.
 
 ## Architecture
 
 ```
 config.py ───┐
 data.py      ├──► models.py ──► train.py ──► evaluation.py ──► sweep.py
-             │                                                    │
-             └──► viz.py  ◄───────────────────────────────────────┘
+             │                                    │              │
+             │                                    ▼              │
+             │                               artifacts.py (pickle cache)
+             │                                    │
+             └──► viz.py  ◄───────────────────────┴──────────────┘
+
+determinism.py — called once at the top of every run.py
 ```
 
 Every experiment driver follows the same pipeline:
 
 ```
 config → generate data → build model zoo → train_zoo_multiseed / run_flexible_toy_sweep
-       → save_exp02_panel_set + save_sweep_metric → summary.json
+       → save_diagnostic_panel_set + save_sweep_metric → summary.json
 ```
 
 ---
@@ -31,7 +38,7 @@ Dataclass-based experiment configuration.
 
 | Class | Used by | Key fields |
 |---|---|---|
-| `TrainConfig` | base | `n_train=25000`, `epochs=500`, `patience=50`, `batch_size=512`, `hidden_dim=256`, `hidden_layers=4`, `p_homogeneity=1.0`, `lambda_cor=0.1`, `num_seeds=1`, `device`, `seed=42` |
+| `TrainConfig` | base | `n_train=25000`, `epochs=2000`, `recon_patience=100`, `penalty_patience=600`, `warmup_max_epochs=1000`, `batch_size=512`, `hidden_dim=256`, `hidden_layers=4`, `p_homogeneity=1.0`, `lambda_cor=0.1`, `num_seeds=1`, `device`, `seed=42` |
 | `CurvedSurfaceConfig(TrainConfig)` | exp01 | `student_df_t=2.8`, `D=3, m=2` fixed, `p_homogeneity=2.0`, smaller net (`hidden_dim=192`, `hidden_layers=3`) |
 | `FlexibleToyConfig(TrainConfig)` | exp02–06 | `D=10`, `m=3`, `alpha=1.8`, `kappa=1.0`, `curvature_rank=8`, `embedding_seed=1234` |
 
@@ -118,11 +125,22 @@ preserves tails but loses on reconstruction quality.
 Training loop shared by all neural models.
 
 - `train(model, train_data, val_data, config, *, verbose=True)` — Adam
-  optimiser with best-validation-total checkpointing and early stopping
-  (stops when val loss hasn't improved for `config.patience` epochs).
+  optimiser with best-validation checkpointing and a two-phase early-
+  stopping schedule for HAE:
+  - **Warmup phase** (λ=0, recon-only). Exits when val reconstruction
+    has no improvement for `config.recon_patience` epochs, or when
+    epoch exceeds `config.warmup_max_epochs`, whichever is sooner.
+  - **Penalty phase** (full objective with ratcheting λ). Standard
+    early stopping on the checkpoint metric with budget
+    `config.penalty_patience`.
+
+  `StandardAutoencoder` has no warmup or penalty; it uses
+  `recon_patience` as its sole early-stopping budget.
+
   Returns a `history` dict with keys `epoch`, `train_total`,
   `train_reconstruction`, `train_penalty`, `val_total`,
-  `val_reconstruction`, `val_penalty` (each a list of floats).
+  `val_reconstruction`, `val_penalty`, `lambda_eff` (each a list of
+  floats).
 - `fit_pca_baseline(model, train_data, val_data, config)` — one-shot SVD
   fitting. Returns a history dict with the same schema (single-element
   lists) for plotting compatibility.
@@ -185,12 +203,11 @@ Tail-preservation evaluation metrics in four groups.
 
 Unified evaluation pipeline.
 
-- `evaluate_model(model, x_test, *, alpha_true, p_encoder, ...)` — runs
-  every metric from `metrics.py` on a held-out tensor and returns a flat
-  dict. Key behaviour:
-  - Stores both the deprecated `alpha_error_*` scalars (comparing to
-    unobservable true alpha) and the preferred `hill_drift_*` scalars
-    (comparing to ambient Hill), for backwards compatibility.
+- `_evaluate_model(model, x_test, *, alpha_true, p_encoder, ...)` —
+  private helper; runs every metric from `metrics.py` on a held-out
+  tensor and returns a flat dict. Key behaviour:
+  - Stores the `hill_drift_*` scalars (comparing latent/reconstructed
+    Hill to the ambient Hill via Proposition 1).
   - Extracts `_delta_norm = ||delta||` per sample only for
     `HomogeneousAutoencoder` (the decoder correction diagnostic).
   - Keeps raw arrays prefixed with underscore (`_ambient_radii`,
@@ -203,7 +220,7 @@ Unified evaluation pipeline.
 - `train_and_evaluate(model_name, model, train_data, val_data, test_data,
   config, *, alpha_true, p_for_hill, embedding=None, ...)` — per-model
   pipeline: dispatches to `train` or `fit_pca_baseline`, then runs
-  `evaluate_model`. Attaches `_history` to the metrics dict.
+  `_evaluate_model`. Attaches `_history` to the metrics dict.
 - `serializable(metrics)` — strips underscore-prefixed keys for JSON.
 - `write_metrics_json(metrics_by_model, path)` — JSON-safe dump.
 
@@ -219,8 +236,7 @@ Parameter-sweep harness for `FlexibleToyConfig` experiments.
   mean/std tables:
   ```
   reconstruction_mse, tail_conditional_mse, hill_drift_latent,
-  hill_drift_reconstructed, alpha_error_reconstructed,
-  alpha_error_latent, angular_tail_distance, extrapolation_mse_at_10
+  hill_drift_reconstructed, angular_tail_distance, extrapolation_mse_at_10
   ```
 
 **Functions:**
@@ -246,17 +262,41 @@ Parameter-sweep harness for `FlexibleToyConfig` experiments.
    "per_seed_points": [{model: [seed0_metrics, seed1_metrics, ...]}, ...]}
   ```
   `per_seed_points` carries the raw underscore-prefixed arrays needed by
-  `save_exp02_panel_set`. `write_sweep_json` only serialises the `raw`
+  `save_diagnostic_panel_set`. `write_sweep_json` only serialises the `raw`
   field, so JSON safety is preserved.
 - `write_sweep_json(sweep_result, path)`.
 
-### `viz.py`
+### `viz/` (package)
 
-Publication-quality matplotlib primitives. One PNG per call.
+Publication-quality plot primitives, split by theme. One PNG per call;
+each primitive also writes a sibling `.pdf` for vector inclusion.
 
-**Module-level setup:** `_apply_aesthetic()` runs at import, setting STIX
-serif font, hidden top/right spines, soft grid, inward ticks, DPI 220.
+```
+viz/
+├── _base.py          — rcParams patch, colour/marker/label tables, _save_gg, _finish
+├── manifold_plots.py — 3-D scatters, hero figure, latent-space scatter
+├── tail_plots.py     — Hill curves, binned recon, extrapolation, correction diagnostics
+├── sweep_plots.py    — save_sweep_metric, plot_sweep_grid
+├── panel_sets.py     — save_diagnostic_panel_set, plot_training_history
+└── __init__.py       — re-exports the full public API (unchanged)
+```
+
+**Module-level setup:** importing `lib.viz` triggers the NeurIPS-style
+`_apply_mpl_aesthetic()` rcParams patch in `_base.py` (sans-serif 9 pt,
+hidden top/right spines, soft grid, inward ticks, savefig DPI 300).
 All primitives inherit this automatically.
+
+### `cli.py`
+
+Shared CLI scaffolding for every `run.py`.
+
+- `parse_standard_args(description, extra=None)` — registers the two
+  cache flags (`--plot-only`, `--force-retrain`). Pass `extra` to add
+  experiment-specific flags on the same parser.
+- `init_experiment(script_path, config_cls, *, subdir=None, **kwargs)` —
+  resolves the results directory next to the script, instantiates the
+  config, writes `config.json`, locks in determinism, and returns the
+  config. Drivers collapse to ~2 lines of setup.
 
 **Per-model palette:**
 
@@ -298,7 +338,7 @@ All primitives inherit this automatically.
 
 **Panel-set helper:**
 
-- `save_exp02_panel_set(point, output_dir, *, p, prefix="")` — writes the
+- `save_diagnostic_panel_set(point, output_dir, *, p, prefix="")` — writes the
   full diagnostic panel set (up to 6 PNGs) for one training point.
   Composes the primitives above. Extrapolation and correction plots are
   skipped if the required data is absent.
@@ -330,7 +370,7 @@ Every experiment driver follows the same pattern:
    **Sweep** (exp03–06): call `run_flexible_toy_sweep(base_config,
    parameter_name, values)`.
 4. Pass `result["per_seed"][0]` or each sweep point's first seed to
-   `save_exp02_panel_set` for the diagnostic panels.
+   `save_diagnostic_panel_set` for the diagnostic panels.
 5. (Sweeps only) Call `save_sweep_metric` for each aggregate metric curve.
 6. Persist `summary.json` / `sweep.json` / `per_seed_metrics.json`.
 
@@ -341,13 +381,11 @@ Every experiment driver follows the same pattern:
 - **`MODEL_NAMES` order is load-bearing** — viz primitives iterate in this
   order to keep colours and legend entries consistent across figures.
 - **Only `HomogeneousAutoencoder.decode` returns `delta`**; StdAE and PCA
-  do not. `evaluate_model` only attaches `_delta_norm` for HAE.
+  do not. `_evaluate_model` only attaches `_delta_norm` for HAE.
 - **`_extrapolation` is absent when no `embedding` is supplied** — that's
   why exp01 (curved surface) produces 5 diagnostic PNGs instead of 6.
-- **`hill_drift_latent`** (`|alpha_lat * p - alpha_amb|`) is the preferred
-  scalar for the Proposition 1 consistency check. `alpha_error_latent`
-  (comparing to unobservable true alpha) is retained only for
-  backwards-compatible sweep JSONs.
+- **`hill_drift_latent`** (`|alpha_lat * p - alpha_amb|`) is the
+  Proposition 1 consistency check against the ambient Hill estimate.
 - **Homogeneity is structural for HAE** — the scalar
   `homogeneity_error.worst` appears in every summary table, but the
   visual verification (the homogeneity-scan panel) lives in a single
@@ -356,3 +394,81 @@ Every experiment driver follows the same pattern:
   drivers.
 - **PCA must be trained via `fit_pca_baseline`**, not `train` — the neural
   training loop assumes a gradient-based optimiser.
+
+---
+
+## Artifacts (pickle cache)
+
+Every call to `train_and_evaluate(..., artifact_path=P)` writes a pickle
+at `P` containing everything needed to redraw plots for that (seed,
+model) pair without retraining. The schema is:
+
+```python
+{
+    "version": 1,                       # ARTIFACT_VERSION in artifacts.py
+    "model_class": "HomogeneousAutoencoder" | "StandardAutoencoder" | "PCABaseline",
+    "state": {
+        "state_dict": {param_name: torch.Tensor},   # CPU tensors
+        "extra": {"_fitted": bool}                  # PCA only
+    },
+    "metrics": {
+        # Full evaluation dict, INCLUDING underscore-prefixed raw arrays
+        # (_ambient_radii, _latent_radii, _binned_error, _history, ...)
+        # that the viz layer consumes.
+        ...
+    },
+    "config_snapshot": {...}              # dataclasses.asdict of TrainConfig
+}
+```
+
+### API
+
+```python
+from lib.artifacts import (
+    save_run_artifact,           # pickle (metrics, model) atomically to path
+    load_run_artifact,           # return payload dict
+    rebuild_model_from_artifact, # reconstruct nn.Module from payload
+    artifact_path,               # canonical path: seed_dir / f"{model_name}.pkl"
+)
+```
+
+### Caching contract
+
+- `train_and_evaluate(..., artifact_path=P)` writes `P` after
+  evaluation. Callers decide whether to supply `P`.
+- `train_zoo_multiseed(config, seed_artifact_dir=D, force_retrain=False,
+  require_cache=False)` checks `artifact_path(D / f"seed{i}", name)` per
+  model; if present and `not force_retrain`, loads instead of training.
+- Set `require_cache=True` to fail loudly when any pickle is missing —
+  used by `run.py --plot-only` so the user is told exactly what cache
+  entry is needed.
+- `run_flexible_toy_sweep(..., artifact_root=R, force_retrain, require_cache)`
+  forwards those flags to every sweep point. Cache paths are
+  `R / f"point_{param}={value}" / f"seed{i}" / f"{name}.pkl"`.
+
+### Writing
+
+`save_run_artifact` writes to a `.tmp` sidecar and renames atomically, so
+a `KeyboardInterrupt` mid-write cannot leave a half-written pickle that
+would later masquerade as a valid cache entry.
+
+### Versioning
+
+`ARTIFACT_VERSION` is a module-level integer in `artifacts.py`. Bump it
+whenever an incompatible change lands (e.g., a new required key in
+`metrics`); `load_run_artifact` raises on mismatched version and tells
+the user to rerun with `--force-retrain`.
+
+---
+
+## Determinism
+
+`lib.determinism.enable_deterministic(seed: int)` is called exactly
+once near the top of every `run.py`. It:
+
+- sets `PYTHONHASHSEED`, `CUBLAS_WORKSPACE_CONFIG`;
+- seeds `random`, `numpy`, `torch`, `torch.cuda`;
+- enables `torch.backends.cudnn.deterministic` and
+  `torch.use_deterministic_algorithms(True, warn_only=True)`.
+
+Call it before any model construction or data generation.

@@ -3,10 +3,17 @@
 Three models sharing a common interface:
 
 - ``HomogeneousAutoencoder``: exact paper architecture. The encoder is
-  ``p``-homogeneous by construction and the decoder is asymptotically
-  homogeneous via the bounded angular correction
+  ``p``-homogeneous by construction (in the recentred coordinate
+  ``x - c``) and the decoder is asymptotically homogeneous via the
+  bounded angular correction
   ``delta(eta, rho) = Delta_psi(eta, s(rho)) - Delta_psi(eta, 0)``
-  with ``s(rho) = 1/(1+rho)``.
+  with ``s(rho) = 1/(1+rho)`` where ``rho = ||z||`` is the latent radius.
+  The decoder is therefore a pure function of ``z`` --- it needs no
+  knowledge of the ambient radius, so standalone decoding from a sampled
+  ``z`` is identical to decoding at training time. The optional centring
+  vector ``c`` (fixed buffer or learnable parameter) lets the framework's
+  tail-cone origin sit at the data centre rather than at the origin of
+  ambient space; ``c = 0`` recovers the unrecentred construction.
 
 - ``StandardAutoencoder``: deterministic MLP autoencoder with MSE loss
   (no homogeneity, no correction, no penalty). Same hidden sizes as the
@@ -23,12 +30,11 @@ training loop in ``train.py``.
 
 from __future__ import annotations
 
-from typing import Dict
+import math
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 
 # -----------------------------------------------------------------------------
 # Shared helpers
@@ -40,6 +46,8 @@ def unit_vector(x: torch.Tensor, dim: int = -1, eps: float = 1e-8) -> torch.Tens
 
 
 class MLP(nn.Module):
+    """Plain MLP with ReLU hidden layers; identity on output."""
+
     def __init__(
         self,
         input_dim: int,
@@ -67,14 +75,14 @@ class MLP(nn.Module):
 class HomogeneousAutoencoder(nn.Module):
     """Exact paper architecture.
 
-    Encoder:
-        theta = x / ||x||_2
-        r     = ||x||_2
+    Encoder (operating on the recentred coordinate ``x' = x - c``):
+        theta = x' / ||x'||_2
+        r     = ||x'||_2
         a(theta) = softplus(A_phi(theta))           (scalar)
         e(theta) = normalize(E_phi(theta))          (unit vector in R^m)
         f(x) = r^p * a(theta) * e(theta)
 
-    Decoder:
+    Decoder (a function of z alone, then re-adds c):
         rho       = ||z||_2
         eta       = z / rho
         a_tilde   = softplus(A_psi(eta))
@@ -82,7 +90,10 @@ class HomogeneousAutoencoder(nn.Module):
         s         = 1 / (1 + rho)
         delta     = Delta_psi(eta, s) - Delta_psi(eta, 0)
         c_tilde   = normalize(e_tilde + delta)
-        h(z)      = rho^(1/p) * a_tilde * c_tilde
+        h(z)      = rho^(1/p) * a_tilde * c_tilde + c
+
+    The centring vector ``c`` is either a fixed buffer (default zeros)
+    or a learnable parameter, controlled by ``learnable_centre``.
     """
 
     def __init__(
@@ -92,11 +103,22 @@ class HomogeneousAutoencoder(nn.Module):
         hidden_dim: int,
         hidden_layers: int,
         p_homogeneity: float,
+        centre_init: torch.Tensor | None = None,
+        learnable_centre: bool = False,
     ) -> None:
         super().__init__()
         self.D = int(D)
         self.m = int(m)
         self.p = float(p_homogeneity)
+
+        if centre_init is None:
+            centre_tensor = torch.zeros(self.D)
+        else:
+            centre_tensor = torch.as_tensor(centre_init, dtype=torch.float32).reshape(self.D)
+        if learnable_centre:
+            self.centre = nn.Parameter(centre_tensor.clone())
+        else:
+            self.register_buffer("centre", centre_tensor.clone())
 
         self.A_phi = MLP(D, 1, hidden_dim, hidden_layers)
         self.E_phi = MLP(D, m, hidden_dim, hidden_layers)
@@ -105,7 +127,8 @@ class HomogeneousAutoencoder(nn.Module):
         self.E_psi = MLP(m, D, hidden_dim, hidden_layers)
         self.Delta_psi = MLP(m + 1, D, hidden_dim, hidden_layers)
 
-    def encode(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def encode(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
+        x = x - self.centre
         r = torch.linalg.norm(x, dim=1)
         theta = unit_vector(x, dim=1)
         a = F.softplus(self.A_phi(theta).squeeze(-1))
@@ -114,7 +137,7 @@ class HomogeneousAutoencoder(nn.Module):
         z = r_p[:, None] * a[:, None] * e
         return {"z": z, "r": r, "theta": theta, "a": a, "e": e}
 
-    def decode(self, z: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def decode(self, z: torch.Tensor) -> dict[str, torch.Tensor]:
         rho = torch.linalg.norm(z, dim=1)
         eta = unit_vector(z, dim=1)
         a_tilde = F.softplus(self.A_psi(eta).squeeze(-1))
@@ -129,7 +152,7 @@ class HomogeneousAutoencoder(nn.Module):
         c_tilde = unit_vector(e_plus_delta, dim=1)
 
         radial_scale = rho ** (1.0 / self.p)
-        x_hat = radial_scale[:, None] * a_tilde[:, None] * c_tilde
+        x_hat = radial_scale[:, None] * a_tilde[:, None] * c_tilde + self.centre
         return {
             "x_hat": x_hat,
             "rho": rho,
@@ -140,7 +163,7 @@ class HomogeneousAutoencoder(nn.Module):
             "c_tilde": c_tilde,
         }
 
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         encoded = self.encode(x)
         decoded = self.decode(encoded["z"])
         return {**encoded, **decoded}
@@ -148,16 +171,16 @@ class HomogeneousAutoencoder(nn.Module):
 
 def homogeneous_loss(
     x: torch.Tensor,
-    forward_pass: Dict[str, torch.Tensor],
+    forward_pass: dict[str, torch.Tensor],
     lambda_cor: float,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     x_hat = forward_pass["x_hat"]
-    rho = forward_pass["rho"]
+    r = forward_pass["r"]
     e_tilde = forward_pass["e_tilde"]
     c_tilde = forward_pass["c_tilde"]
 
     reconstruction = torch.mean((x - x_hat) ** 2)
-    weight = torch.log1p(rho)
+    weight = torch.log1p(r)
     per_sample_penalty = torch.linalg.norm(c_tilde - e_tilde, dim=1)
     penalty = torch.mean(weight * per_sample_penalty)
     total = reconstruction + lambda_cor * penalty
@@ -183,15 +206,15 @@ class StandardAutoencoder(nn.Module):
         self.encoder = MLP(D, m, hidden_dim, hidden_layers)
         self.decoder = MLP(m, D, hidden_dim, hidden_layers)
 
-    def encode(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def encode(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         z = self.encoder(x)
         return {"z": z}
 
-    def decode(self, z: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def decode(self, z: torch.Tensor) -> dict[str, torch.Tensor]:
         x_hat = self.decoder(z)
         return {"x_hat": x_hat}
 
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         encoded = self.encode(x)
         decoded = self.decode(encoded["z"])
         return {**encoded, **decoded}
@@ -199,9 +222,9 @@ class StandardAutoencoder(nn.Module):
 
 def standard_loss(
     x: torch.Tensor,
-    forward_pass: Dict[str, torch.Tensor],
+    forward_pass: dict[str, torch.Tensor],
     lambda_cor: float,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     del lambda_cor  # kept for signature parity with homogeneous_loss
     reconstruction = torch.mean((x - forward_pass["x_hat"]) ** 2)
     zero = torch.zeros((), device=reconstruction.device)
@@ -235,17 +258,17 @@ class PCABaseline(nn.Module):
         self.V.copy_(vh[: self.m].T)
         self._fitted = True
 
-    def encode(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def encode(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         assert self._fitted, "PCABaseline.fit must be called before encode"
         z = x @ self.V
         return {"z": z}
 
-    def decode(self, z: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def decode(self, z: torch.Tensor) -> dict[str, torch.Tensor]:
         assert self._fitted, "PCABaseline.fit must be called before decode"
         x_hat = z @ self.V.T
         return {"x_hat": x_hat}
 
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         encoded = self.encode(x)
         decoded = self.decode(encoded["z"])
         return {**encoded, **decoded}
@@ -267,8 +290,6 @@ def compute_matched_hidden_dim(
 
     We solve the quadratic in *h* and round to the nearest integer.
     """
-    import math
-
     L = hidden_layers
     a = 2 * (L - 1)
     b = 2 * D + 2 * m + 2 * L

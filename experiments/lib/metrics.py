@@ -7,7 +7,6 @@ metrics that actually separate HAE from the StandardAE baseline:
 
 - ``binned_reconstruction_error`` - per-radial-bin reconstruction MSE;
 - ``tail_conditional_mse`` - MSE restricted to the top radial quantile;
-- ``homogeneity_scan`` - relative homogeneity residual curve vs scale;
 - ``extrapolation_mse`` - reconstruction MSE at out-of-training scales
   synthesised through the true embedding module;
 - ``tail_angular_coordinates`` - 2-D principal-axis projection of the
@@ -16,11 +15,21 @@ metrics that actually separate HAE from the StandardAE baseline:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Sequence, Tuple
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
+
+# Division-safety floors. Two regimes intentionally:
+#   - NORM_EPS guards first-order norms / unit-vector normalisations where
+#     1e-12 is well above float64 noise for the magnitudes we touch.
+#   - SQNORM_EPS guards squared-norm denominators (``sum(x**2)``) which can
+#     legitimately underflow 1e-24 on tiny inputs; 1e-30 stays below the
+#     smallest meaningful squared magnitude without hitting subnormals.
+NORM_EPS: float = 1e-12
+SQNORM_EPS: float = 1e-30
 
 
 # -----------------------------------------------------------------------------
@@ -28,7 +37,7 @@ import torch.nn as nn
 # -----------------------------------------------------------------------------
 
 
-def hill_curve(radii: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def hill_curve(radii: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Return (k_values, alpha_hat_k) over k = 2 ... n-1.
 
     Uses positive radii only. Sorted in decreasing order so that
@@ -70,7 +79,7 @@ def hill_drift(alpha_latent: float, alpha_ambient: float, p: float) -> float:
 
 def hill_estimate(
     radii: np.ndarray, k_fraction: float = 0.1
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Point estimate of tail index alpha via the Hill estimator.
 
     Uses the top ``k = max(10, floor(k_fraction * n))`` order statistics.
@@ -90,7 +99,10 @@ def hill_estimate(
     log_top_k = np.log(sorted_desc[:k])
     log_threshold = np.log(sorted_desc[k])
     hill_denominator = float(np.mean(log_top_k) - log_threshold)
-    alpha_hat = 1.0 / hill_denominator
+    if abs(hill_denominator) < 1e-15:
+        alpha_hat = float("inf")
+    else:
+        alpha_hat = 1.0 / hill_denominator
 
     std_err = alpha_hat / float(np.sqrt(k))
     return {
@@ -112,15 +124,15 @@ def extreme_quantile_errors(
     reference: np.ndarray,
     candidate: np.ndarray,
     levels: Sequence[float] = (0.99, 0.999, 0.9999),
-) -> Dict[str, Dict[str, float]]:
+) -> dict[str, dict[str, float]]:
     reference = np.asarray(reference, dtype=np.float64)
     candidate = np.asarray(candidate, dtype=np.float64)
-    out: Dict[str, Dict[str, float]] = {}
+    out: dict[str, dict[str, float]] = {}
     for level in levels:
         q_ref = float(np.quantile(reference, level))
         q_cand = float(np.quantile(candidate, level))
         abs_error = abs(q_cand - q_ref)
-        denom = max(abs(q_ref), 1e-12)
+        denom = max(abs(q_ref), NORM_EPS)
         rel_error = abs_error / denom
         out[f"q{level}"] = {
             "reference": q_ref,
@@ -148,7 +160,7 @@ def _select_tail_directions(
         )
     tail_points = x[mask]
     tail_norms = np.linalg.norm(tail_points, axis=1, keepdims=True)
-    return tail_points / np.maximum(tail_norms, 1e-12)
+    return tail_points / np.maximum(tail_norms, NORM_EPS)
 
 
 def angular_tail_distance(
@@ -158,12 +170,14 @@ def angular_tail_distance(
     radial_quantile: float = 0.95,
     num_slices: int = 100,
     seed: int = 0,
+    centre: np.ndarray | None = None,
 ) -> float:
     """Sliced Wasserstein distance between empirical angular tail measures.
 
     Both ``x`` and ``x_other`` are (N, D) arrays in the *same* ambient
     space. The top ``1 - radial_quantile`` fraction is selected from each
-    by ambient radius, projected onto the unit sphere, and a 1-D
+    by recentred radius (``||x - centre||``; ``centre = 0`` if not given),
+    projected onto the unit sphere of the recentred frame, and a 1-D
     Wasserstein distance is computed along ``num_slices`` random unit
     directions. The result is the mean over slices.
     """
@@ -173,14 +187,18 @@ def angular_tail_distance(
         raise ValueError(
             f"Ambient dims differ: {x.shape[1]} vs {x_other.shape[1]}"
         )
+    if centre is None:
+        centre = np.zeros(x.shape[1], dtype=np.float64)
+    else:
+        centre = np.asarray(centre, dtype=np.float64).reshape(x.shape[1])
 
-    directions_a = _select_tail_directions(x, radial_quantile)
-    directions_b = _select_tail_directions(x_other, radial_quantile)
+    directions_a = _select_tail_directions(x - centre, radial_quantile)
+    directions_b = _select_tail_directions(x_other - centre, radial_quantile)
 
     rng = np.random.default_rng(int(seed))
     slice_vectors = rng.standard_normal(size=(num_slices, x.shape[1]))
     slice_vectors /= np.maximum(
-        np.linalg.norm(slice_vectors, axis=1, keepdims=True), 1e-12
+        np.linalg.norm(slice_vectors, axis=1, keepdims=True), NORM_EPS
     )
 
     projected_a = directions_a @ slice_vectors.T
@@ -214,24 +232,34 @@ def encoder_homogeneity_error(
     x_probe: torch.Tensor,
     p: float,
     scales: Sequence[float] = (0.5, 1.0, 2.0, 4.0, 8.0),
-) -> Dict[str, float]:
-    """Measure ``|| f(lambda x) - lambda^p f(x) ||^2 / || lambda^p f(x) ||^2``.
+) -> dict[str, float]:
+    """Measure ``|| f(lambda*(x-c)+c) - lambda^p f(x) ||^2 / || lambda^p f(x) ||^2``.
 
-    Returns a dict keyed by the scale (stringified) with the mean relative
-    squared error on the probe batch, plus the worst case across scales.
+    The encoder ``f(x) = g(x - c)`` is ``p``-homogeneous in the recentred
+    coordinate, so we scale ``(x - c)`` by ``lambda`` and add ``c`` back
+    before encoding. Models without a ``centre`` attribute use ``c = 0``,
+    which reduces to the original raw-frame test. Returns a dict keyed by
+    the scale with the mean relative squared error on the probe batch,
+    plus the worst case across scales.
     """
     model.eval()
+    centre = getattr(model, "centre", None)
+    if centre is None:
+        centre = torch.zeros(x_probe.shape[1], device=x_probe.device, dtype=x_probe.dtype)
+    else:
+        centre = centre.to(device=x_probe.device, dtype=x_probe.dtype)
+
     encoded = model.encode(x_probe)
     base_z = encoded["z"]
 
-    errors: Dict[str, float] = {}
+    errors: dict[str, float] = {}
     worst = 0.0
     for scale in scales:
-        scaled_input = scale * x_probe
+        scaled_input = scale * (x_probe - centre) + centre
         scaled_z_reference = (scale ** p) * base_z
         scaled_encoded = model.encode(scaled_input)["z"]
         numerator = torch.sum((scaled_encoded - scaled_z_reference) ** 2, dim=1)
-        denominator = torch.sum(scaled_z_reference ** 2, dim=1) + 1e-12
+        denominator = torch.sum(scaled_z_reference ** 2, dim=1) + NORM_EPS
         relative_squared = torch.mean(numerator / denominator).item()
         errors[f"scale_{scale}"] = float(relative_squared)
         worst = max(worst, float(relative_squared))
@@ -253,13 +281,15 @@ def binned_reconstruction_error(
     log_bins: bool = True,
     lower_quantile: float = 0.02,
     upper_quantile: float = 0.9999,
-) -> Dict[str, np.ndarray]:
+    centre: np.ndarray | None = None,
+) -> dict[str, np.ndarray]:
     """Per-sample ``||x - x_hat||^2`` aggregated into radial bins.
 
-    x-axis of the returned curve is the geometric mean of each bin edge
-    (log_bins=True) or the midpoint (log_bins=False). y-axis returns
-    median and IQR per bin, plus the sample count so the caller can
-    down-weight or drop under-populated bins.
+    Bins use the recentred radius ``||x - centre||`` (``centre = 0`` if
+    not given). x-axis of the returned curve is the geometric mean of
+    each bin edge (log_bins=True) or the midpoint (log_bins=False).
+    y-axis returns median and IQR per bin, plus the sample count so the
+    caller can down-weight or drop under-populated bins.
     """
     x = np.asarray(x, dtype=np.float64)
     x_hat = np.asarray(x_hat, dtype=np.float64)
@@ -267,8 +297,12 @@ def binned_reconstruction_error(
         raise ValueError(
             f"shape mismatch: {x.shape} vs {x_hat.shape}"
         )
+    if centre is None:
+        centre = np.zeros(x.shape[1], dtype=np.float64)
+    else:
+        centre = np.asarray(centre, dtype=np.float64).reshape(x.shape[1])
 
-    radii = np.linalg.norm(x, axis=1)
+    radii = np.linalg.norm(x - centre, axis=1)
     per_sample_sq_err = np.sum((x - x_hat) ** 2, axis=1)
 
     low_edge = float(np.quantile(radii, lower_quantile))
@@ -318,11 +352,16 @@ def tail_conditional_mse(
     x_hat: np.ndarray,
     *,
     radial_quantile: float = 0.95,
+    centre: np.ndarray | None = None,
 ) -> float:
-    """Scalar reconstruction MSE on samples with ``||x|| >= q``-quantile."""
+    """Scalar reconstruction MSE on samples with ``||x - centre|| >= q``-quantile."""
     x = np.asarray(x, dtype=np.float64)
     x_hat = np.asarray(x_hat, dtype=np.float64)
-    radii = np.linalg.norm(x, axis=1)
+    if centre is None:
+        centre = np.zeros(x.shape[1], dtype=np.float64)
+    else:
+        centre = np.asarray(centre, dtype=np.float64).reshape(x.shape[1])
+    radii = np.linalg.norm(x - centre, axis=1)
     threshold = float(np.quantile(radii, radial_quantile))
     mask = radii >= threshold
     if mask.sum() < 10:
@@ -331,44 +370,6 @@ def tail_conditional_mse(
         )
     diff = x[mask] - x_hat[mask]
     return float(np.mean(diff ** 2))
-
-
-@torch.no_grad()
-def homogeneity_scan(
-    model: nn.Module,
-    x_probe: torch.Tensor,
-    p: float,
-    scales: Sequence[float],
-) -> Dict[str, np.ndarray]:
-    """Return the full relative-residual curve of the encoder homogeneity.
-
-    For each scale lambda the metric is
-
-        mean_x  || f(lambda * x) - lambda^p * f(x) ||^2
-                 / || lambda^p * f(x) ||^2
-
-    computed on the provided probe batch. Shape of the returned arrays
-    matches the scales list.
-    """
-    model.eval()
-    base = model.encode(x_probe)
-    base_z = base["z"]
-
-    scales_array = np.asarray(list(scales), dtype=np.float64)
-    residuals = np.full(scales_array.shape, np.nan, dtype=np.float64)
-
-    for index, scale in enumerate(scales_array):
-        scaled_input = float(scale) * x_probe
-        reference = (float(scale) ** float(p)) * base_z
-        scaled_encoded = model.encode(scaled_input)["z"]
-        numerator = torch.sum((scaled_encoded - reference) ** 2, dim=1)
-        denominator = torch.sum(reference ** 2, dim=1) + 1e-30
-        residuals[index] = float(torch.mean(numerator / denominator).item())
-
-    return {
-        "scales": scales_array,
-        "relative_residual": residuals,
-    }
 
 
 @torch.no_grad()
@@ -383,7 +384,7 @@ def extrapolation_mse(
     base_radius: float = 1.0,
     sample_seed: int = 999,
     device: str = "cpu",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Reconstruction MSE on samples drawn at out-of-training radii.
 
     We draw ``n_samples`` directions ``u ~ Uniform(S^{m-1})`` once, then
@@ -398,7 +399,7 @@ def extrapolation_mse(
     rng = np.random.default_rng(int(sample_seed))
     directions = rng.standard_normal(size=(n_samples, m)).astype(np.float32)
     directions /= np.maximum(
-        np.linalg.norm(directions, axis=1, keepdims=True), 1e-12
+        np.linalg.norm(directions, axis=1, keepdims=True), NORM_EPS
     )
     directions_tensor = torch.from_numpy(directions).to(device)
 
@@ -425,7 +426,7 @@ def tail_angular_coordinates(
     *,
     radial_quantile: float = 0.95,
     rank: int = 2,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Project the top-quantile tail cones of several models onto a common basis.
 
     The projection basis is computed from the *true* tail directions so
@@ -444,13 +445,13 @@ def tail_angular_coordinates(
 
     true_tail = x_true[true_mask]
     true_directions = true_tail / np.maximum(
-        np.linalg.norm(true_tail, axis=1, keepdims=True), 1e-12
+        np.linalg.norm(true_tail, axis=1, keepdims=True), NORM_EPS
     )
     centered = true_directions - true_directions.mean(axis=0, keepdims=True)
     _, _, vh = np.linalg.svd(centered, full_matrices=False)
     projection_basis = vh[:rank].T
 
-    output: Dict[str, np.ndarray] = {
+    output: dict[str, np.ndarray] = {
         "basis": projection_basis,
         "truth": true_directions @ projection_basis,
     }
@@ -463,7 +464,7 @@ def tail_angular_coordinates(
             )
         model_tail = x_model[true_mask]
         model_directions = model_tail / np.maximum(
-            np.linalg.norm(model_tail, axis=1, keepdims=True), 1e-12
+            np.linalg.norm(model_tail, axis=1, keepdims=True), NORM_EPS
         )
         output[model_name] = model_directions @ projection_basis
     return output

@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "cartopy>=0.25.0",
     "ipykernel>=7.2.0",
     "matplotlib>=3.10.8",
     "numpy>=2.4.3",
@@ -14,3 +15,36 @@ dependencies = [
     "seaborn>=0.13.2",
     "torch>=2.10.0",
 ]
+
+[project.optional-dependencies]
+climate = ["xarray>=2024.1.0", "netcdf4>=1.6.0", "cdsapi>=0.7.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["experiments/lib"]
+
+[tool.hatch.build.targets.wheel.sources]
+"experiments/lib" = "lib"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["2025_report", "docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PLC"]
+ignore = [
+    "E501",  # line too long — soft cap enforced by line-length
+    "B008",  # function call in default argument — common torch/numpy idiom
+    "SIM108",  # ternary-over-if — sometimes less readable
+]
+
+[tool.ruff.lint.per-file-ignores]
+"experiments/lib/viz/*.py" = ["E402"]  # matplotlib.use must precede pyplot import
+"experiments/climate/*.py" = ["PLC0415"]  # deliberate lazy imports of optional deps (cdsapi, xarray, yaml)

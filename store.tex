@@ -1,0 +1,1180 @@
+
+\section{Deferred proofs}
+\label{sec:appendix:proofs}
+
+The proof of \Cref{prop:canonical-homogeneous-form} (radial--angular factorisation) is given in \Cref{sec:appendix:canonical-form}.
+
+\subsection{Proof of
+\texorpdfstring{\Cref{prop:reg-variation-under-homogeneous-encoders}}{Proposition~\ref*{prop:reg-variation-under-homogeneous-encoders}}
+(encoder tail transport)}
+\label{sec:appendix:proof-encoder-tail-transport}
+
+\begin{proof}[Proof of \Cref{prop:reg-variation-under-homogeneous-encoders}]
+Define
+\[
+\nu_t(\cdot)
+:=
+t\,\mathbb{P}\!\left(\frac{X}{b(t)}\in \cdot\right).
+\]
+By assumption that \(X\) is regularly varying, \(\nu_t \to \mu\) in \(\mathbb{M}(\mathbb{O}_D)\). Since \(f\) satisfies the hypotheses of the mapping theorem (\Cref{thm:mapping-theorem}; see \cite{lindskog_regularly_2014}, Theorem~2.3 and \cite[Prop.~3.12]{Resnick_2007}) and since \(f\) is continuous \(\mu\)-almost everywhere, so that \(\mu(D_f)=0\), it follows that
+\[
+\nu_t \circ f^{-1}
+\;\xrightarrow[t\to\infty]{}\;
+\mu\circ f^{-1}
+=
+\mu_f
+\qquad
+\text{in } \mathbb{M}(\mathbb{O}_m).
+\]
+Now, for any measurable \(A\subset\mathbb{O}_m\) bounded away from \(0\), we have
+\[
+(\nu_t\circ f^{-1})(A)
+=
+t\,\mathbb{P}\!\left(\frac{X}{b(t)} \in f^{-1}(A)\right)
+=
+t\,\mathbb{P}\!\left(f\!\left(\frac{X}{b(t)}\right)\in A\right).
+\]
+Then, by \(p\)-homogeneity of \(f\),
+\[
+f\!\left(\frac{X}{b(t)}\right)
+=
+\frac{f(X)}{b(t)^p},
+\]
+so
+\[
+t\,\mathbb{P}\!\left(\frac{f(X)}{b(t)^p}\in A\right)
+\;\xrightarrow[t\to\infty]{}\;
+\mu_f(A).
+\]
+Therefore \(f(X)\) is regularly varying on \(\mathbb{O}_m\) with scaling function \(b_f(t)=b(t)^p\) and tail measure \(\mu_f=f_{\#}\mu = \mu\circ f^{-1}\).
+
+To identify the tail (homogeneity) index of \(\mu_f\), let \(A\subset\mathbb{O}_m\) be measurable and bounded away from \(0\) and let \(\lambda>0\). By homogeneity of \(f\), we have \(f(x)\in\lambda A\) if and only if \(f(\lambda^{-1/p}x)\in A\), which gives
+\[
+f^{-1}(\lambda A)=\lambda^{1/p} f^{-1}(A).
+\]
+Therefore,
+\[
+\mu_f(\lambda A)
+=
+\mu\bigl(f^{-1}(\lambda A)\bigr)
+=
+\mu\bigl(\lambda^{1/p} f^{-1}(A)\bigr)
+=
+\lambda^{-\frac{\alpha}{p}}\mu\bigl(f^{-1}(A)\bigr)
+=
+\lambda^{-\frac{\alpha}{p}}\mu_f(A).
+\]
+Thus \(\mu_f\) is \(\frac{\alpha}{p}\)-homogeneous. Equivalently, \(f(X)\) is regularly varying with tail index \(\frac{\alpha}{p}\).
+\end{proof}
+
+\todopar{APX-A3}{Proof of the asymptotic decoder tail-equivalence
+Theorem~\ref{thm:decoder-tail-equivalence} (Theorem~2).
+$h(Z)-h_{\mathrm{hom}}(Z) = \rho^{1/p}\tilde a(\eta)(\tilde c(\eta,\rho)-\tilde e(\eta))$,
+and assumptions (A3)+(A4) imply $\tilde c-\tilde e \to 0$ uniformly on
+$\mathbb{S}^{m-1}_q$, so
+$\|h(Z)-h_{\mathrm{hom}}(Z)\| = o(\rho^{1/p})$ uniformly in $\eta$.
+Apply a Slutsky-style argument for regularly varying sequences
+(\cite{Resnick_2007} Prop.~3.12; \cite{lindskog_regularly_2014}
+Theorem~2.3).
+
+\textbf{Prose prompts:}
+(1) Is each step labelled with the assumption it consumes (A1 bounds $\tilde a$; A2 ensures $\tilde e$ continuous; A3 gives uniform convergence; A4 bounds the denominator) so a reader can track which hypothesis is being used where?
+(2) Is the ``Slutsky-style argument'' spelled out concretely -- the sequence $h_{\mathrm{hom}}(f(X)/b(t))$ converges in $\mathbb{M}(\mathbb{O}_D)$ by Prop.~1 plus the pushforward, and the perturbation goes to zero uniformly -- rather than just cited?
+(3) Does the final paragraph state explicitly that this proves both parts of tail equivalence (same scaling function \emph{and} same tail measure)?}
+
+\todopar{APX-A4}{Proof of the uniform angular-convergence lemma (Lemma
+M-D5 in \S\ref{sec:decoder-architecture}): on the compact set
+$\mathbb{S}^{m-1}_q \times [0,1]$, continuity of $\Delta_\psi$ plus
+Heine--Cantor gives uniform continuity, hence
+$\sup_\eta\|\delta(\eta,r)\| = \sup_\eta
+\|\Delta_\psi(\eta,s(r))-\Delta_\psi(\eta,0)\|\to 0$ as
+$s(r)=1/(1+r)\to 0$.
+
+\textbf{Prose prompts:}
+(1) Is the use of Heine--Cantor made explicit so a reader can recognise the classical lemma rather than a one-off argument?
+(2) Is the compactness of the domain $\mathbb{S}^{m-1}_q\times[0,1]$ justified (sphere is compact by construction; $[0,1]$ is the image of $s(r)$) rather than assumed?
+(3) Is it worth adding a sharper Remark: if $\Delta_\psi$ is Lipschitz in $s$, the $o(1)$ becomes $O(r^{-1})$, which is what APX-B3 consumes?}
+
+\section{Extended theoretical discussion}
+\label{sec:appendix:extra-theory}
+
+\subsection{Radial--angular factorisation of homogeneous maps}
+\label{sec:appendix:canonical-form}
+
+In this section we show that every positively homogeneous map on
+\(\mathbb{R}^D\setminus\{0\}\) admits a unique radial--angular factorisation
+for a given norm. This is useful in a machine learning setting: since homogeneity is enforced by construction in this representation, one may parameterise the angular component unrestricted while always satisfying the required scaling law. This observation motivates the encoder architecture introduced later in
+Section~\ref{sec:encoder-architecture}.
+
+Let
+\[
+\mathbb{O}_D := \mathbb{R}^D \setminus \{0\}.
+\]
+Fix \(q \in [1,\infty]\). For each \(x \in \mathbb{O}_D\), write
+\[
+x = \rho\,\theta,
+\qquad
+\rho := \|x\|_{q} > 0,
+\qquad
+\theta := \frac{x}{\|x\|_{q}} \in \mathbb{S}^{D-1}_{q},
+\]
+where
+\[
+\mathbb{S}^{D-1}_{q} := \{u \in \mathbb{R}^D : \|u\|_{q} = 1\}.
+\]
+
+\begin{proposition}[Radial--angular factorisation of positively homogeneous maps]
+\label{prop:canonical-homogeneous-form}
+Let \(f : \mathbb{O}_D \to \mathbb{R}^m\) and let \(p \in \mathbb{R}\). Then the
+following are equivalent:
+\begin{enumerate}
+    \item \(f\) is positively homogeneous of degree \(p\), that is,
+    \[
+    f(\lambda x) = \lambda^p f(x),
+    \qquad x \in \mathbb{O}_D,\ \lambda > 0;
+    \]
+    \item there exists a unique map
+    \[
+    g : \mathbb{S}^{D-1}_{q} \to \mathbb{R}^m
+    \]
+    such that
+    \[
+    f(x) = \|x\|_{q}^p\, g\!\left(\frac{x}{\|x\|_{q}}\right),
+    \qquad x \in \mathbb{O}_D.
+    \]
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Firstly, to verify that the provided factorisation is indeed homogeneous, suppose that
+\[
+f(x) = \|x\|_{q}^p\, g\!\left(\frac{x}{\|x\|_{q}}\right),
+\qquad x \in \mathbb{O}_D.
+\]
+Then for every \(\lambda > 0\),
+\[
+f(\lambda x)
+=
+\|\lambda x\|_{q}^p\, g\!\left(\frac{\lambda x}{\|\lambda x\|_{q}}\right)
+=
+(\lambda \|x\|_{q})^p\, g\!\left(\frac{x}{\|x\|_{q}}\right)
+=
+\lambda^p f(x),
+\]
+since \(\|\lambda x\|_{q} = \lambda \|x\|_{q}\) for \(\lambda > 0\). Thus \(f\) is positively homogeneous of degree \(p\).
+
+Now to show that any valid f always admits a radial--angular factorisation, assume that \(f\) is positively homogeneous of degree \(p\). Define
+\[
+g(\theta) := f(\theta),
+\qquad \theta \in \mathbb{S}^{D-1}_{q}.
+\]
+For any \(x \in \mathbb{O}_D\), we have
+\[
+x = \|x\|_{q} \frac{x}{\|x\|_{q}},
+\]
+and therefore, by positive homogeneity,
+\[
+f(x)
+=
+f\!\left(\|x\|_{q} \frac{x}{\|x\|_{q}}\right)
+=
+\|x\|_{q}^p\, f\!\left(\frac{x}{\|x\|_{q}}\right)
+=
+\|x\|_{q}^p\, g\!\left(\frac{x}{\|x\|_{q}}\right).
+\]
+This proves existence.
+
+To prove uniqueness, suppose also that
+\[
+f(x) = \|x\|_{q}^p\, \tilde g\!\left(\frac{x}{\|x\|_{q}}\right)
+\]
+for some map \(\tilde g : \mathbb{S}^{D-1}_{q} \to \mathbb{R}^m\). Let
+\(\theta \in \mathbb{S}^{D-1}_{q}\). Since \(\|\theta\|_{q} = 1\), evaluating both
+representations at \(x=\theta\) gives
+\[
+f(\theta)=g(\theta)
+\qquad\text{and}\qquad
+f(\theta)=\tilde g(\theta).
+\]
+Therefore
+\[
+g(\theta)=\tilde g(\theta)
+\qquad
+\text{for every } \theta \in \mathbb{S}^{D-1}_{q}.
+\]
+Hence \(g=\tilde g\).
+\end{proof}
+
+\begin{remark}
+\Cref{prop:canonical-homogeneous-form} shows that, for a given norm
+\(\|\cdot\|_{q}\), a positively homogeneous map is completely determined by its
+restriction to the \(q\)-sphere: the scaling behaviour is prescribed by \(\|x\|_{q}^p\), and all remaining structure is represented by the angular component \(g\).
+\end{remark}
+
+A corollary of \ref{prop:canonical-homogeneous-form} is that, on the subset
+\[
+\{\theta \in \mathbb{S}^{D-1}_{q} : g(\theta) \neq 0\},
+\]
+one may further decompose \(g\) into magnitude and direction:
+\[
+g(\theta) = a(\theta)e(\theta),
+\qquad
+a(\theta) := \|g(\theta)\|_{q},
+\qquad
+e(\theta) := \frac{g(\theta)}{\|g(\theta)\|_{q}} \in \mathbb{S}^{m-1}_{q},
+\]
+where \(q \in [1,\infty]\) is a latent-space norm exponent. For notational simplicity, we use \(q\) to denote norm exponents in both the ambient space \(\mathbb{R}^D\) and the latent space \(\mathbb{R}^m\). However, these exponents need not be equal in practice, allowing flexibility in the choice of norm for each space.
+
+Thus, for every \(x \in \mathbb{O}_D\) such that
+\(g(x/\|x\|_{q}) \neq 0\), we always have the decomposition
+\[
+f(x)
+=
+\|x\|_{q}^p\,
+a\!\left(\frac{x}{\|x\|_{q}}\right)
+e\!\left(\frac{x}{\|x\|_{q}}\right).
+\]
+
+Under this representation, \(a\) can be considered as an angle-dependent scaling factor, \(e\) as an angle-map, and \(\|x\|_{q}^p\) as a purely radial scaling term.
+
+\todopar{APX-B-RAD}{Add a formal Remark ``Exact vs.\ bounded radial
+preservation'' with three tiers:
+(i) $a(\theta)\equiv 1$ -- radius preserved exactly; encoder is a radial
+isometry; only manifolds admitting such an embedding can be reconstructed.
+(ii) $a_{\min}\le a(\theta)\le a_{\max}$ (bounded-$a$ variant) -- tail
+index unchanged; latent radius differs from ambient by a bounded angular
+factor; tail measure preserved modulo bounded angular reweighting.
+(iii) $a(\theta)$ unrestricted positive -- maximal expressiveness; default
+used throughout experiments.
+
+\textbf{Prose prompts:}
+(1) For each tier, what is the explicit effect on $\mu_f$ (tier i: $\mu_f = e_\# \mu|_{\mathbb{S}^{D-1}_q}$; tier ii: bounded angular density; tier iii: general pushforward)?
+(2) Can you give a one-line example where tier (i) is enough (data already concentrates on a cone) vs. where tier (iii) is needed (flexible toy manifold)?
+(3) Does the Remark close by pointing to the experimental knob -- in the code, what does ``clamp $a$'' look like, and is it exposed to the user?}
+
+More generally, the same argument applies whenever one replaces
+\(\|x\|_{q}\) by a positive radial function \(r : \mathbb{O}_D \to (0,\infty)\)
+satisfying
+\[
+r(\lambda x) = \lambda r(x),
+\qquad x \in \mathbb{O}_D,\ \lambda > 0,
+\]
+and uses an associated normalisation \(x \mapsto x/r(x)\).
+
+\subsection{Single-chart assumption}
+
+\todopar{APX-B1}{Discussion of the single-chart assumption (moved here
+from \S\ref{sec:intro} I-M6 and the decoder Remark~M-D1). State what
+breaks on multi-chart manifolds and how a gluing argument would proceed
+conceptually.
+
+\textbf{Prose prompts:}
+(1) What \emph{specifically} breaks on a sphere or torus -- the encoder's radial factorisation requires a global chart, and on compact manifolds the radial coordinate has no natural target?
+(2) Can the gluing story be sketched in half a page -- partition of unity on the sphere + local HAEs per chart + boundary consistency -- enough for a reader to see the direction without a full construction?
+(3) Is there a class of ``almost single-chart'' manifolds (cones with a puncture at the origin, hyperbolic embeddings) that \emph{is} covered by the existing theory, worth naming explicitly?}
+
+\todopar{APX-B2}{Comparison to \cite{lindskog_regularly_2014}
+Theorem~2.3 and \cite{Resnick_2007} Prop.~3.12 in detail: when our
+statement specialises to theirs, when it strengthens, and worked
+examples (linear map, scalar power, product of homogeneous maps).
+
+\textbf{Prose prompts:}
+(1) Specialisation: when $f$ is linear, does Prop.~1 recover \cite[Thm.\ 2.3]{lindskog_regularly_2014} exactly, or does our statement carry extra baggage?
+(2) Strengthening: our result gives the pushforward tail measure \emph{in closed form} via $f_\#\mu$; does the cited result only give existence without a formula?
+(3) Worked examples: for (a) a linear map, (b) $f(x)=\|x\|^p$ (scalar power), (c) $f(x,y)=(x\|y\|^p, y\|x\|^q)$ (product), is the pushforward computed explicitly so a reader can check their intuition?}
+
+\todopar{APX-B3}{Rate discussion for Theorem~2: if $\Delta_\psi$ is
+Lipschitz in $s$ near $s=0$ with constant $L$, then
+$\sup_\eta\|\delta(\eta,r)\| \le L/(1+r) = O(r^{-1})$.
+This is stronger than (A3) requires and justifies the $s(r)=1/(1+r)$
+choice.
+
+\textbf{Prose prompts:}
+(1) Can the improved conclusion be stated explicitly: under Lipschitz $\Delta_\psi$, $\|h(Z)-h_{\mathrm{hom}}(Z)\| = O(\rho^{1/p-1})$, which (for $p=1$) means the approximation error is bounded in ambient norm?
+(2) Does the rate tell the reader anything actionable -- e.g.\ use spectral normalisation on $\Delta_\psi$ to certify the Lipschitz constant in practice?
+(3) Is the choice of $s(r)=1/(1+r)$ contrasted with alternatives ($e^{-r}$: too fast; $1/\log(1+r)$: too slow) so the reader sees why this choice is the sweet spot?}
+
+\section{Architecture details}
+\label{sec:appendix:architecture}
+
+\paragraph{Encoder parameterisation.}
+For implementation, \(a\) and \(e\) are represented by neural networks on \(\mathbb{S}^{D-1}_{q}\):
+\[
+a(\theta)=\mathrm{softplus}\!\bigl(A_\phi(\theta)\bigr),
+\qquad
+e(\theta)=\frac{E_\phi(\theta)}{\|E_\phi(\theta)\|_{q}},
+\]
+where
+\[
+A_\phi:\mathbb{S}^{D-1}_{q}\to\mathbb{R},
+\qquad
+E_\phi:\mathbb{S}^{D-1}_{q}\to\mathbb{R}^m.
+\]
+We assume that \(E_\phi(\theta)\neq 0\) for all \(\theta\) in the domain of interest, so that the normalised direction map is well-defined. The softplus nonlinearity enforces positivity of \(a\), and normalisation enforces \(e(\theta)\in\mathbb{S}^{m-1}_{q}\).
+
+\paragraph{Decoder parameterisation.}
+To parameterise the full decoder in practice, we use
+\[
+\tilde a(\eta)=\mathrm{softplus}\!\bigl(A_\psi(\eta)\bigr),
+\qquad
+\tilde e(\eta)=\frac{E_\psi(\eta)}{\|E_\psi(\eta)\|_{q}},
+\qquad
+\delta(\eta,r)=\Delta_\psi\bigl(\eta,s(r)\bigr)-\Delta_\psi(\eta,0),
+\]
+with neural networks
+\[
+A_\psi:\mathbb{S}^{m-1}_{q}\to \mathbb{R},
+\qquad
+E_\psi:\mathbb{S}^{m-1}_{q}\to \mathbb{R}^D,
+\qquad
+\Delta_\psi:\mathbb{S}^{m-1}_{q}\times[0,1]\to \mathbb{R}^D.
+\]
+We assume throughout that \(E_\psi(\eta)\neq 0\) on the domain of interest, so that the normalised map \(\tilde e\) is well-defined.
+
+\todopar{APX-C1}{Exact MLP specifications for $A_\phi, E_\phi$
+(encoder), $A_\psi, E_\psi, \Delta_\psi$ (decoder): hidden widths,
+depths, activations, nonnegativity enforcement (softplus), and the
+$q$-normalisation layer. Match the defaults in
+\texttt{experiments/lib/models.py} and
+\texttt{experiments/lib/config.py}.
+
+\textbf{Prose prompts:}
+(1) Is the section structured as a table (one row per sub-network, columns: input, hidden widths, output, activation, softplus? yes/no) rather than prose?
+(2) Is the capacity-matching to StandardAE spelled out (hidden-width inflated to the nearest integer giving parameter parity), so a reader can reproduce it by plugging into the same formula?
+(3) Are the defaults in \texttt{config.py} flagged as \emph{defaults} rather than absolutes -- i.e.\ exactly what a user sees when they clone and run, so the appendix table doubles as a spec?}
+
+\todopar{APX-C2}{Block diagrams: (a) encoder
+$x\mapsto(\|x\|_q^p,\theta)\mapsto(a(\theta),e(\theta))\mapsto z$;
+(b) decoder
+$z=(\rho,\eta),\;r=\|x\|\mapsto(\rho^{1/p},\tilde a(\eta),\tilde e(\eta),
+\delta(\eta,r))\mapsto\tilde c \mapsto h(z,r)$. These are the
+promoted versions of I-M8 and M-D3.
+
+\textbf{Prose prompts (for the TikZ diagrams):}
+(1) Is each block a named operation (``Split'', ``Angular MLP'', ``Magnitude MLP'', ``Normalise'') rather than an anonymous box, so a reader can map each block to a line of code?
+(2) Does the decoder diagram highlight where $\delta$ enters and where the $\delta\to 0$ limit is visually imminent (a fading arrow, a dotted box)?
+(3) Are the shapes annotated with tensor dimensions ($\mathbb{R}^D$, $\mathbb{S}^{D-1}$, $\mathbb{R}^m$, $\mathbb{S}^{m-1}$) so the reader can track where the bottleneck actually sits?}
+
+\todopar{APX-C3}{Parameter-count accounting for the matched-capacity
+comparison against StandardAE: report exact counts for each experiment,
+sourced from the per-run JSON artefacts in
+\texttt{experiments/*/results/*/config.json}.
+
+\textbf{Prose prompts:}
+(1) Is the table structured so the reader can see parameter counts matching within $\sim$1\% across experiments, and is the matching formula named (``StandardAE hidden width chosen as the nearest integer giving $\pm 1\%$ parameter parity'')?
+(2) Does the table include PCA's parameter count (effectively $mD$) so the reader sees it as a genuinely different regime, not merely a competitor?
+(3) Is it flagged explicitly that parameter-matching is not capacity-matching (representational capacity depends on architecture), pre-empting a reviewer who pushes back on the comparison?}
+
+\section{Training details}
+\label{sec:appendix:training}
+
+\paragraph{Implementation choices.}
+In our experiments the following implementation choices are used: $\mathcal{L}_{\mathrm{recon}}$ is the mean-squared error, $\|\cdot\|_{\mathrm{pen}} = \|\cdot\|_2$, and the latent-space norm exponent is $q=2$.
+
+\paragraph{Adaptive $\lambda_{\mathrm{cor}}$ schedule.}
+Rather than treating $\lambda_{\mathrm{cor}}$ as a fixed hyperparameter, we employ an adaptive schedule that prioritises reconstruction fidelity before gradually incentivising homogeneity.  Training occurs in two phases:
+\begin{enumerate}
+    \item \emph{Phase A (warmup).} The model trains with $\lambda_{\mathrm{cor}} = 0$ (pure reconstruction) until the validation reconstruction loss has converged, operationalised as no improvement in the best validation reconstruction for $N_{\mathrm{recon}}$ consecutive epochs.  A hard cap $T_{\mathrm{warmup-max}}$ on the number of warmup epochs guarantees the phase terminates on pathological runs.  At exit we record an exponential moving average (EMA) baseline~$b$ of the validation reconstruction loss.
+    \item \emph{Phase B (growth/decay).} At each subsequent epoch the EMA of the validation reconstruction loss is compared against the tolerance $b(1 + \tau)$.  If the current EMA does not exceed this threshold, $\lambda_{\mathrm{cor}} \leftarrow \min(\lambda_{\max},\, \lambda_{\mathrm{cor}} \cdot g)$; otherwise $\lambda_{\mathrm{cor}} \leftarrow \lambda_{\mathrm{cor}} \cdot d$, with $d < 1$.
+\end{enumerate}
+The aim of this is to satisfy reconstruction first, then enforce homogeneity to the extent that the network can absorb it without degrading reconstruction quality.  In our synthetic experiments we set $N_{\mathrm{recon}} = 100$, $T_{\mathrm{warmup-max}} = 1000$, $g = 1.10$, $d = 0.95$, $\tau = 0.50$, and $\lambda_{\max} = 1.0$.  We additionally apply gradient norm clipping with a maximum norm of~$1.0$, Phase-B early stopping on the full validation loss with patience $N_{\mathrm{penalty}} = 600$, and retain the best-validation checkpoint.  The standard (non-homogeneous) autoencoder baseline has no penalty phase and uses $N_{\mathrm{recon}}$ as its sole early-stopping budget; its hidden-layer width is chosen so that the total parameter count matches that of the homogeneous model.
+
+\todopar{M-REG}{Update to mention the standard regularisation applied to all MLP sub-networks: (i) weight decay ($10^{-4}$, i.e.\ $L_2$ penalty on weights via AdamW-style decoupled regularisation in the Adam optimiser) and (ii) dropout (rate $0.1$) applied after each hidden-layer activation. These are standard capacity-control mechanisms and do not interact with the homogeneity penalty. They primarily help the climate experiments where D is large relative to the training set (e.g.\ the joint tensor with D=1105 and $\sim$25k samples). For the low-dimensional synthetic experiments, both are set to zero (defaults).
+
+\textbf{Prose prompts:}
+(1) Why does the paper need to say these are \emph{standard} regularisers rather than homogeneity-specific ones -- so the reader does not mistake them for a hidden part of the homogeneity story?
+(2) Is the climate vs.\ synthetic split justified on a $D/n$ ratio (e.g.\ ``$D/n>0.04$ triggers both'') rather than as an arbitrary choice, so a reader can check when to switch them on in their own experiments?
+(3) Does the paragraph clarify that weight decay acts on MLP weights only, not on the $\lambda_{\mathrm{cor}}$ schedule -- i.e.\ the two capacity controls are orthogonal -- and is this framed as a one-line reassurance rather than a technicality?}
+
+\todopar{APX-D2}{Remark: a sample-weight variant using ambient radius
+$\|x\|$ instead of latent radius $\rho=\|z\|_q$ yields similar results
+in practice but is more sensitive to outliers. We default to the latent
+radius.
+
+\textbf{Prose prompts:}
+(1) Why is the latent radius $\rho$ the default despite the ambient radius being ``closer to the data'' -- because $\rho$ is bounded by the learned $a$ even when a single outlier drives $\|x\|$ large?
+(2) Is ``sensitive to outliers'' operationalised (e.g.\ a single-point perturbation causes a 10$\times$ shift in the training-loss weight distribution, with evidence from \texttt{summary.json})?
+(3) Should the Remark end with guidance: ``if you know your data has no outliers, the ambient-radius variant is equivalent''?}
+
+\todopar{APX-D3}{Optimiser, learning-rate schedule, batch size -- fill
+from \texttt{experiments/lib/config.py}. Seeds used across all
+experiments.
+
+\textbf{Prose prompts:}
+(1) Does the section report the exact optimiser (AdamW with weight decay $10^{-4}$), learning rate, schedule (cosine? constant? step-decay?), batch size, and epoch count -- all five, in one table?
+(2) Is the seed list explicit -- e.g.\ ``$\{0,1,2,3,4\}$'' -- rather than vague (``multiple seeds'')?
+(3) Does the section mention whether the reported numbers are best-checkpoint or last-epoch, since this choice affects reproducibility?}
+
+\todopar{APX-D4}{Computational cost per experiment (wall-clock, GPU
+model, peak memory). Required by the NeurIPS reproducibility checklist.
+
+\textbf{Prose prompts:}
+(1) Report each experiment's cost in a table with columns (experiment, GPU, peak memory, wall-clock); is there a total-budget row so a reader knows ``$\sim$X GPU-hours to reproduce the paper''?
+(2) Is the climate run disaggregated by variable, since \texttt{u10}, \texttt{tp}, \texttt{t2m}, \texttt{tensor} differ in $D$ and so in wall-clock?
+(3) Is there a one-line statement about whether a reader can reproduce on a single consumer GPU (RTX 3090/4090), or if a datacentre card is necessary?}
+
+\paragraph{Training curves.}
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \includefig{exp01_curved_surface/results/diagnostic/training_history}
+    \caption{\texttt{exp01}.}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \includefig{exp02_flexible_toy_ablation/results/diagnostic/training_history}
+    \caption{\texttt{exp02}.}
+  \end{subfigure}
+  \caption{Training history: total loss and reconstruction MSE vs.\ epoch.
+  \todo{add climate training curves once runs finish; show the adaptive
+  $\lambda_{\mathrm{cor}}$ ramp as a secondary axis or inset.}}
+  \label{fig:training-history}
+\end{figure}
+
+
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{When does it work?}
+\todopar{D-1}{The method works best when the ambient manifold is
+asymptotically conical -- which is implied by regular variation on the
+tail measure's support. For manifolds with persistent nontrivial
+curvature at all scales, the asymptotic-homogeneity bias can cost
+reconstruction accuracy in the tail. This is \emph{observable}: when
+the correction norm $\|\delta(\eta,r)\|$ does not decay as
+$r\to\infty$, the model is being forced onto a cone the data does
+not lie on, and this should be treated as a diagnostic signal rather
+than as quiet mis-specification.
+
+\textbf{Prose prompts:}
+(1) Is ``asymptotically conical'' defined in the body glossary or forward-referenced -- a reader seeing the phrase for the first time in \S7 may not know it means ``for every $\epsilon$, the manifold lies in an $\epsilon$-tube around a cone outside a compact set''?
+(2) Can the ``observable'' clause be turned into a checkable procedure: ``plot $\|\delta(\eta,r)\|$ vs $r$; if it does not decay, the architecture's assumption is violated for your data''?
+(3) Does the paragraph name the \emph{sufficient} condition (conical support of the tail measure) \emph{and} the necessary failure mode (persistent curvature) so the reader knows when to trust HAE and when to reach for a different tool?}
+
+\paragraph{Hyperparameter guidance.}
+\todopar{D-2}{$p$ is the homogeneity degree of the encoder (default
+$p{=}1$); $\alpha$ is the ambient tail index, auto-estimated via the
+Hill estimator implemented in
+\texttt{experiments/lib/metrics.py:hill\_estimate}. The correction
+weight $\lambda_{\mathrm{cor}}$ is ratcheted adaptively
+(\Cref{sec:appendix:training}); a useful default is the two-phase
+schedule with warmup patience $N_{\mathrm{recon}}{=}100$ on the
+validation reconstruction loss (safety cap
+$T_{\mathrm{warmup-max}}{=}1000$), growth $g{=}1.10$, decay $d{=}0.95$,
+tolerance $\tau{=}0.5$, and $\lambda_{\max}{=}1$.
+
+\textbf{Prose prompts:}
+(1) For each of $p$, $\alpha$, $\lambda_{\mathrm{cor}}$: is there a one-line \emph{diagnostic} telling the practitioner whether the current value is too small or too large (Hill drift not flat $\Rightarrow$ $p$ wrong; correction norm not decaying $\Rightarrow$ $\lambda_{\mathrm{cor}}$ too small; etc.)?
+(2) Does the paragraph tell the reader which hyperparameters they ever need to touch ($\lambda_{\mathrm{cor}}$ schedule in heavy-curvature regimes; $p$ if they want a specific latent $\alpha/p$) vs.\ which are set-and-forget?
+(3) Is there a safety default: ``if in doubt, $p{=}1$, $\lambda_{\mathrm{cor}}$ at the two-phase default, Hill $k{=}0.1n$'' -- so the hyperparameter section is usable without reading the appendix?}
+
+\subsection{Limitations}
+\label{sec:discussion:limitations}
+\todopar{D-3a}{Write limitation L1 (1--2 sentences): ``The latent chart is
+assumed diffeomorphic to $\mathbb{R}^m$; multi-chart manifolds require a
+gluing construction we do not address (see \Cref{sec:appendix:extra-theory}
+for discussion).''
+
+\textbf{Prose prompts:}
+(1) What data actually has multi-chart structure (a torus? a sphere? a circle of wind directions?) and how often does it arise in the EVT applications the paper targets?
+(2) Is the limitation framed as a scope choice (``the single-chart case already covers the climate and finance problems we target'') rather than a gap?
+(3) Is the forward reference concrete (``Appendix B.2'') rather than vague (``see appendix for discussion'')?}
+\todopar{D-3b}{Write limitation L2 (1--2 sentences): ``Fast decoder
+tail-equivalence (Theorem~2) requires $\Delta_\psi$ Lipschitz in $s$ near
+$s{=}0$. Without this, tail equivalence holds only in the weaker
+uniform-continuity sense.''
+
+\textbf{Prose prompts:}
+(1) Is Lipschitz continuity automatic for a MLP $\Delta_\psi$ with smooth activations (GELU, tanh) on a compact domain, or does it require extra care? Say which.
+(2) What does the weaker ``uniform-continuity'' conclusion actually let a reader do -- asymptotic tail equivalence without a rate, which still gives the Corollary on tail index?
+(3) Is this limitation framed as ``a rate vs.\ a convergence'' trade-off so readers don't confuse it with a failure of the method?}
+\todopar{D-3c}{Write limitation L3 (1--2 sentences): ``Hill estimator
+$k$-selection is a known nuisance; our default $k{=}\lceil 0.1n\rceil$
+is discussed in \Cref{sec:appendix:metrics}, with sensitivity to
+$k\in\{0.05n,0.1n,0.2n\}$.''
+
+\textbf{Prose prompts:}
+(1) Why is Hill's $k$-selection a general EVT problem and not a failure specific to HAE -- can the paragraph flag this so reviewers don't read it as a methodological weakness of ours?
+(2) Does the sensitivity range $k\in\{0.05n,0.1n,0.2n\}$ come with a one-line qualitative report (``all three give the same ranking HAE $\prec$ StandardAE'') so the reader knows the headline is robust?
+(3) Is there a pointer to more principled $k$-selection (Reiss--Thomas, Hall bootstrap, distance-covariance methods) that a future user could substitute?}
+\todopar{D-3d}{Write limitation L4 (1--2 sentences): ``All experiments use
+$m\ll D$; behaviour at $m\sim D$ is untested and may expose a harder
+optimisation landscape for the encoder angular maps.''
+
+\textbf{Prose prompts:}
+(1) What specific mechanism would make $m\sim D$ harder -- the angular map $e:\mathbb{S}^{D-1}\to\mathbb{S}^{m-1}$ approaches identity, at which point the $p$-homogeneous bottleneck is minimally constraining?
+(2) Is ``untested'' phrased candidly (``we have not evaluated this regime'') rather than speculatively (``may fail'')?
+(3) Does the limitation say what a reader should do in the $m\sim D$ regime -- is the answer ``use a linear encoder'' or ``something is wrong with your intrinsic-dim estimate''?}
+\todopar{E-LIMITS}{Acknowledge L1--L4 in prose only -- no new failure
+experiment. The existing correction-norm plots in \Cref{sec:appendix:exp01}
+and \Cref{sec:appendix:exp02} already show the decay behaviour the theory
+predicts; a two-sentence honest limitation in \S7 is stronger than a
+commissioned failure panel. (Was previously scoped as \texttt{exp08};
+cut for scope.)
+
+\textbf{Prose prompts:}
+(1) Does the prose say ``we commissioned but cut exp08 for space, preferring honest prose limitations'' -- so reviewers see intent, not omission?
+(2) For each of L1--L4, is there a one-line \emph{follow-up} (``multi-chart gluing would address L1; adaptive $k$-selection addresses L3'') so the limitations section doubles as a future-work map?
+(3) Is the paragraph structured as ``what the method does \emph{not} do'' rather than ``what the method does badly'' -- framing matters?}
+
+\subsection{Broader impact}
+\label{sec:discussion:impact}
+\todopar{D-4}{Positive impact: the method enables EVT-based risk
+analysis on high-dimensional climate and finance data where existing
+nonlinear dimension reduction destroys tails and so renders downstream
+risk estimates unreliable. Negative impact: tail-underestimation from
+mis-specified or untrained models could feed back into downstream risk
+assessments; the paper's failure-diagnostic (non-decaying correction
+norm) is the mitigation.  No generative content, no PII, no dual-use
+concern.
+
+\textbf{Prose prompts:}
+(1) Is the positive impact phrased concretely (``enables a reinsurer to estimate joint 100-year return levels across 52 wind-stations without per-station EVT fits'') rather than abstractly (``enables risk analysis'')?
+(2) Is the negative impact framed as a \emph{specific} failure mode (``a user who ignores the correction-norm diagnostic will silently under-estimate tails'') with a concrete mitigation (``diagnose by plotting $\|\delta\|$ vs $r$'')?
+(3) Does the paragraph avoid boilerplate ``we have considered ethical implications''? NeurIPS reviewers penalise boilerplate impact sections more than missing ones.}
+
+\subsection{Reproducibility and code availability}
+\label{sec:discussion:reproducibility}
+\todopar{REPRO-1}{For the review build: point to an anonymised snapshot
+(\url{https://anonymous.4open.science/...} or a Zenodo anonymous DOI)
+containing (a) the full code under \texttt{experiments/}, (b) pinned
+environment via \texttt{pyproject.toml} and \texttt{uv.lock},
+(c) per-experiment \texttt{config.yaml}, (d) all seeds used.  For
+camera-ready: replace with the canonical GitHub URL.  Cross-reference
+\Cref{sec:appendix:training} (training details) and APX-F4
+(reproduction recipe).}
+
+
+%  encoder
+\begin{remark}[Hypothesis (2) is automatic under our architecture]
+\label{rmk:hypothesis-2-automatic}
+Condition~(2) on preimages bounded away from zero is kept in the statement for generality; it is automatic in the present architecture, where \(f(x)=\|x\|_q^{p}\,a(\theta)\,e(\theta)\) with \(a\) continuous on the compact sphere (hence \(\sup_\theta a(\theta)<\infty\)). For any \(A\subset\mathbb{O}_m\) bounded away from \(0\), one has
+\[
+\inf_{x\in f^{-1}(A)}\|x\|_q
+\;\geq\;
+\bigl(\inf_{y\in A}\|y\|_q \,\big/\, \sup_\theta a(\theta)\bigr)^{1/p}
+\;>\;0,
+\]
+so the preimage is bounded away from the origin.
+\end{remark}
+
+\subsection{Encoder architecture}
+\label{sec:encoder-architecture}
+
+By \Cref{prop:canonical-homogeneous-form}, every positively homogeneous map \(f:\mathbb{O}_D\to\mathbb{R}^m\) of degree \(p\) can be written in the form
+\[
+f(x)=\|x\|_{q}^p\,g\!\left(\frac{x}{\|x\|_{q}}\right),
+\qquad x\in\mathbb{O}_D,
+\]
+for a unique angular map \(g:\mathbb{S}^{D-1}_{q}\to\mathbb{R}^m\). We therefore need only parameterise the angular component of the encoder.
+
+Also, whenever \(g(\theta)\neq 0\), we further write
+\[
+g(\theta)=a(\theta)e(\theta),
+\qquad
+a(\theta):=\|g(\theta)\|_{q},
+\qquad
+e(\theta):=\frac{g(\theta)}{\|g(\theta)\|_{q}}\in\mathbb{S}^{m-1}_{q},
+\]
+where \(q\in[1,\infty]\) is a latent-space norm exponent. The encoder then takes the form
+\[
+f(x)
+=
+\|x\|_{q}^p\,
+a\!\left(\frac{x}{\|x\|_{q}}\right)
+e\!\left(\frac{x}{\|x\|_{q}}\right).
+\]
+Here \(\|x\|_{q}^p\) is the homogeneous radial term, \(a\) is an angle-dependent scaling, and \(e\) is an angular map from the ambient sphere to the latent sphere. This secondary decomposition, whilst theoretically serving only a limited role, is helpful for practical model training purposes such as diagnostics, regularisation and visualisation.
+
+By \Cref{prop:reg-variation-under-homogeneous-encoders}, the latent representation
+\[
+Z=f(X)
+\]
+is regularly varying with tail measure \(f_{\#}\mu\) and tail index \(\alpha/p\).
+
+\todopar{M-D2}{Wrap the $\delta(\eta,r)$ definition in a \texttt{tcolorbox}
+or \texttt{mdframed} environment with a one-line caption:
+``\emph{This construction makes $\delta$ vanish uniformly as
+$r\to\infty$ by continuity on the compact set
+$\mathbb{S}^{m-1}\times[0,1]$.}'' Use:
+\texttt{\textbackslash usepackage[most]\{tcolorbox\}} in preamble, then
+\texttt{\textbackslash begin\{tcolorbox\}[title=Key construction]
+... \textbackslash end\{tcolorbox\}}.
+
+\textbf{Prose prompts:}
+(1) What is the \emph{single trick} that makes $\delta$ vanish at infinity -- rescale $r\in(0,\infty)$ to $s\in(0,1]$ and subtract $\Delta(\eta,0)$, so $s{=}0$ is the boundary point and continuity does the rest?
+(2) Why is this construction better than adding an explicit $\ell_2$ penalty on $\delta$ -- because it enforces the right limit by \emph{architecture} (reparametrisation), not by \emph{regularisation} that the model can fight?
+(3) Could a reader implement this from the box alone -- i.e.\ is the caption self-contained enough to be screenshotted into a talk slide?}
+\todopar{M-D5}{The ``sufficient condition for asymptotic directional
+homogeneity'' display + nondegeneracy condition -- promote to a numbered
+Lemma ``Uniform angular convergence of the corrected decoder'' and move
+proof to \Cref{sec:appendix:proofs}. This is citable and makes \S4.2
+(Thm.~\ref{thm:decoder-tail-equivalence}) cleaner to state.
+
+\textbf{Prose prompts (for the Lemma statement):}
+(1) What exactly does the Lemma promise -- $\sup_\eta \|\delta(\eta,r)\| \to 0$ as $r\to\infty$ -- and does the prose motivate why \emph{uniform} (over $\eta$) convergence is the requirement, not just pointwise?
+(2) What is the nondegeneracy condition $\inf\|\tilde e(\eta)+\delta(\eta,r)\|_q > 0$ protecting against -- the denominator in $\tilde c(\eta,r)$ collapsing -- and is this condition framed as ``mild and checkable'' so it does not look like a hidden assumption?
+(3) Is a one-line Remark attached saying why the compact-domain construction $\Delta$ on $\mathbb{S}^{m-1}\times[0,1]$ makes the Lemma's hypotheses automatic (Heine--Cantor)?}
+
+
+% \section{Method: Homogeneous Autoencoders}
+% \label{sec:method}
+
+% \todopar{M-0}{Structural moves complete: design-principles text
+% (I-M16/I-M18/I-M3) in place below (still needs prose merge to $\le$5
+% sentences, see M-DP1); encoder MLP details moved to
+% \Cref{sec:appendix:architecture}; decoder MLP definitions likewise;
+% I-M17 Remark at top of \S4.3; training objective trimmed. Target: 2.25\,pp
+% total for \S4.}
+% \subsection{Design principles}
+% \label{sec:design-principles}
+
+% We now specify the proposed autoencoder architecture. The design separates the roles of encoding and decoding. The preceding subsection shows that every positively homogeneous map admits a radial--angular factorisation. We therefore parameterise the encoder directly in this form, so that \(p\)-homogeneity and thus the preservation of tail properties as the nondegenerate pushforward of the regularly-varying tail measure are enforced by construction. The decoder is allowed to deviate from homogeneity at moderate scales in order to reconstruct curved manifold geometry, but is regularized so that this deviation becomes negligible in the tail, where consistent scaling matters most for modelling high-dimensional heavy-tailed and manifold-supported data.
+
+% \todopar{M-DP1}{Shorten the three paragraphs below (from I-M3, I-M16, I-M18) to
+% $\leq$5 sentences total. They overlap with the paragraph above; merge the
+% unique points (conical support motivation, exact vs.\ asymptotic
+% homogeneity, adaptive corrections) into the opening paragraph.
+
+% \textbf{Prose prompts:}
+% (1) Why must the \emph{encoder} be exactly homogeneous -- what property fails if it is merely asymptotically homogeneous (the mapping theorem needs pointwise scaling, or the Hill drift returns)?
+% (2) Why must the \emph{decoder} be only asymptotically homogeneous -- what manifold shape is ruled out by exact homogeneity (non-conical support; the Remark already states this — reinforce)?
+% (3) In one sentence, what is the \emph{asymmetry} being exploited -- tail structure lives at $\infty$, curvature lives at finite scale, and the architecture assigns each regime to a different component?
+% (4) Can the design principles be rephrased as three design \emph{rules} (R1: encoder exact homogeneous; R2: decoder leading term homogeneous; R3: correction regularised to zero at $\infty$) so the reader can check the architecture against them later?}
+
+% When \(X\) is supported on a manifold \(\cM\) and is regularly varying with tail measure \(\mu\), homogeneity of \(\mu\) implies that \(\mathrm{supp}(\mu)\) is invariant under positive dilations. Thus the extreme-value behaviour of \(X\) is governed by a conical asymptotic support determined by \(\mu\). We do not require \(\cM\) itself to be globally conical; rather, \(\mu\) describes the directions that remain visible after tail rescaling. This motivates our use of asymptotically homogeneous decoders when modelling high-dimensional, heavy-tailed, manifold-supported data.
+
+% This motivates the core architectural choice of this paper: structurally enforcing homogeneity of the encoder so that tail behaviour is transported to latent space in closed form. In contrast, the decoder need not be globally homogeneous and in fact this ought to be avoided altogether.~\todo{add a small illustrative figure in \S\ref{sec:decoder-architecture} showing a globally homogeneous decoder mapping off-manifold for a curved $\mathcal{M}$} Exact homogeneity is useful for tail transport, but is structurally incompatible with reconstruction of generic curved manifold geometry. Instead, we require only that the decoder is \emph{asymptotically homogeneous}, meaning that it converges to a homogeneous map at large scales while retaining flexibility at finite scales to capture manifold curvature.
+
+% To achieve this, the decoder is designed to be homogeneous at large scales but admits non-homogeneous corrections at moderate scales to capture curved features of \(\cM\). These corrections are regularised to become negligible in the tail, so that at large scales decoding is controlled by a homogeneous component. This is the basis of the presented autoencoder framework: latent representations are learned in a way that is compatible with regular variation, while complex ambient manifold geometry can be recovered through an adaptively asymptotically homogeneous decoder.
+
+% % --- Figure 2: architecture block diagram (body) ----------------------------
+% \begin{figure}[t]
+%   \centering
+%   \begin{tikzpicture}[
+%     every node/.style={font=\small},
+%     box/.style={draw, rounded corners=2pt, minimum height=7mm,
+%                 minimum width=11mm, inner sep=2pt, align=center,
+%                 font=\scriptsize, line width=0.5pt},
+%     iobox/.style={box, fill=black!4},
+%     encbox/.style={box, fill=blue!8, draw=blue!55!black},
+%     decbox/.style={box, fill=black!8, draw=black!55},
+%     decdelta/.style={box, fill=orange!10, draw=orange!70!black,
+%                      dashed, line width=0.6pt},
+%     flow/.style={-{Latex[length=2mm]}, line width=0.55pt, draw=black!70},
+%     fade/.style={-{Latex[length=2mm]}, line width=0.55pt,
+%                  draw=orange!70!black, dashed},
+%     panel/.style={rounded corners=3pt, inner sep=6pt},
+%     caption/.style={font=\scriptsize\itshape, text=black!55, align=left},
+%   ]
+%     %%%%% Encoder panel %%%%%
+%     \node[iobox] (xin) {$x\in\mathbb{O}_D$};
+%     \node[encbox, right=5mm of xin] (split) {Split\\$(\|x\|_q,\;\theta)$};
+%     \node[encbox, above right=1mm and 6mm of split] (mag)
+%       {Magnitude\\$\|x\|_q^{p}$};
+%     \node[encbox, below right=1mm and 6mm of split] (ang)
+%       {Angular MLPs\\$a(\theta),\,e(\theta)$};
+%     \node[encbox, right=18mm of split] (comb) {Combine};
+%     \node[iobox, right=5mm of comb] (zout) {$z=\rho\eta$};
+%     \draw[flow] (xin) -- (split);
+%     \draw[flow] (split.east) -- (mag.west);
+%     \draw[flow] (split.east) -- (ang.west);
+%     \draw[flow] (mag.east) -- (comb.west);
+%     \draw[flow] (ang.east) -- (comb.west);
+%     \draw[flow] (comb) -- (zout);
+%     \begin{scope}[on background layer]
+%       \node[panel, fill=blue!3, draw=blue!25, fit=(xin)(zout)(mag)(ang),
+%             inner sep=8pt] (encpanel) {};
+%     \end{scope}
+%     \node[caption, anchor=north west] at (encpanel.north west)
+%       {(a) Encoder: $p$-homogeneous by construction};
+
+%     %%%%% Decoder panel %%%%%
+%     \node[iobox, below=14mm of xin] (zin) {$z=\rho\eta$};
+%     \node[decbox, right=5mm of zin] (rho) {$\rho^{1/p}$};
+%     \node[decbox, above right=1mm and 6mm of rho] (atilde)
+%       {$\tilde a(\eta)$};
+%     \node[decbox, right=6mm of rho] (etilde)
+%       {$\tilde e(\eta)$};
+%     \node[decdelta, below right=1mm and 6mm of rho] (delta)
+%       {$\delta(\eta,r)$};
+%     \node[decbox, right=6mm of etilde] (cnorm)
+%       {$\tilde c(\eta,r)$};
+%     \node[iobox, right=5mm of cnorm] (xout) {$\hat x=h(z,r)$};
+%     \draw[flow] (zin) -- (rho);
+%     \draw[flow] (rho.east) -- (atilde.west);
+%     \draw[flow] (rho.east) -- (etilde.west);
+%     \draw[flow] (etilde.east) -- (cnorm.west);
+%     \draw[fade] (delta.north east) to[out=15,in=-135] (cnorm.south west);
+%     \draw[flow] (atilde.east) -| (xout.north);
+%     \draw[flow] (cnorm) -- (xout);
+%     \node[caption, anchor=east, text=orange!60!black]
+%       at ([xshift=-1mm]delta.west) {$\delta(\eta,r)\!\to\!0$\\as $\rho\!\to\!\infty$};
+%     \begin{scope}[on background layer]
+%       \node[panel, fill=black!3, draw=black!20,
+%             fit=(zin)(xout)(atilde)(delta), inner sep=8pt] (decpanel) {};
+%     \end{scope}
+%     \node[caption, anchor=north west] at (decpanel.north west)
+%       {(b) Decoder: asymptotically homogeneous};
+%   \end{tikzpicture}
+%   \caption{Architecture overview. \textbf{(a)}~The encoder factorises
+%   $x$ into radial scale $\|x\|_q^p$ and angular maps $a,e$ on
+%   $\mathbb{S}^{D-1}_q$; homogeneity is exact by construction.
+%   \textbf{(b)}~The decoder reconstructs from latent $z{=}\rho\eta$ via a
+%   homogeneous backbone $h_{\mathrm{hom}}$ plus a correction
+%   $\delta(\eta,r)\to 0$ (dashed, orange), enabling finite-scale
+%   curvature while preserving tail structure.}
+%   \label{fig:architecture}
+% \end{figure}
+
+% \subsection{Encoder architecture}
+% \label{sec:encoder-architecture}
+
+% By \Cref{prop:canonical-homogeneous-form}, every positively homogeneous map \(f:\mathbb{O}_D\to\mathbb{R}^m\) of degree \(p\) can be written in the form
+% \[
+% f(x)=\|x\|_{q}^p\,g\!\left(\frac{x}{\|x\|_{q}}\right),
+% \qquad x\in\mathbb{O}_D,
+% \]
+% for a unique angular map \(g:\mathbb{S}^{D-1}_{q}\to\mathbb{R}^m\). We therefore need only parameterise the angular component of the encoder.
+
+% Also, whenever \(g(\theta)\neq 0\), we further write
+% \[
+% g(\theta)=a(\theta)e(\theta),
+% \qquad
+% a(\theta):=\|g(\theta)\|_{q},
+% \qquad
+% e(\theta):=\frac{g(\theta)}{\|g(\theta)\|_{q}}\in\mathbb{S}^{m-1}_{q},
+% \]
+% where \(q\in[1,\infty]\) is a latent-space norm exponent. The encoder then takes the form
+% \[
+% f(x)
+% =
+% \|x\|_{q}^p\,
+% a\!\left(\frac{x}{\|x\|_{q}}\right)
+% e\!\left(\frac{x}{\|x\|_{q}}\right).
+% \]
+% Here \(\|x\|_{q}^p\) is the homogeneous radial term, \(a\) is an angle-dependent scaling, and \(e\) is an angular map from the ambient sphere to the latent sphere. This secondary decomposition, whilst theoretically serving only a limited role, is helpful for practical model training purposes such as diagnostics, regularisation and visualisation.
+
+% By \Cref{prop:reg-variation-under-homogeneous-encoders}, the latent representation
+% \[
+% Z=f(X)
+% \]
+% is regularly varying with tail measure \(f_{\#}\mu\) and tail index \(\alpha/p\).
+
+% \todopar{M-D2}{Wrap the $\delta(\eta,r)$ definition in a \texttt{tcolorbox}
+% or \texttt{mdframed} environment with a one-line caption:
+% ``\emph{This construction makes $\delta$ vanish uniformly as
+% $r\to\infty$ by continuity on the compact set
+% $\mathbb{S}^{m-1}\times[0,1]$.}'' Use:
+% \texttt{\textbackslash usepackage[most]\{tcolorbox\}} in preamble, then
+% \texttt{\textbackslash begin\{tcolorbox\}[title=Key construction]
+% ... \textbackslash end\{tcolorbox\}}.
+
+% \textbf{Prose prompts:}
+% (1) What is the \emph{single trick} that makes $\delta$ vanish at infinity -- rescale $r\in(0,\infty)$ to $s\in(0,1]$ and subtract $\Delta(\eta,0)$, so $s{=}0$ is the boundary point and continuity does the rest?
+% (2) Why is this construction better than adding an explicit $\ell_2$ penalty on $\delta$ -- because it enforces the right limit by \emph{architecture} (reparametrisation), not by \emph{regularisation} that the model can fight?
+% (3) Could a reader implement this from the box alone -- i.e.\ is the caption self-contained enough to be screenshotted into a talk slide?}
+% \todopar{M-D5}{The ``sufficient condition for asymptotic directional
+% homogeneity'' display + nondegeneracy condition -- promote to a numbered
+% Lemma ``Uniform angular convergence of the corrected decoder'' and move
+% proof to \Cref{sec:appendix:proofs}. This is citable and makes \S4.2
+% (Thm.~\ref{thm:decoder-tail-equivalence}) cleaner to state.
+
+% \textbf{Prose prompts (for the Lemma statement):}
+% (1) What exactly does the Lemma promise -- $\sup_\eta \|\delta(\eta,r)\| \to 0$ as $r\to\infty$ -- and does the prose motivate why \emph{uniform} (over $\eta$) convergence is the requirement, not just pointwise?
+% (2) What is the nondegeneracy condition $\inf\|\tilde e(\eta)+\delta(\eta,r)\|_q > 0$ protecting against -- the denominator in $\tilde c(\eta,r)$ collapsing -- and is this condition framed as ``mild and checkable'' so it does not look like a hidden assumption?
+% (3) Is a one-line Remark attached saying why the compact-domain construction $\Delta$ on $\mathbb{S}^{m-1}\times[0,1]$ makes the Lemma's hypotheses automatic (Heine--Cantor)?}
+% \subsection{Decoder architecture}
+% \label{sec:decoder-architecture}
+
+% \begin{remark}[Why the decoder should not be globally homogeneous]
+% Let \(h:\mathbb{O}_m\to\mathbb{O}_D\) be positively homogeneous of degree \(r>0\). If \(x=h(z)\), then for every \(\lambda>0\),
+% \[
+% \lambda x = h(\lambda^{1/r} z).
+% \]
+% Therefore \(h(\mathbb{O}_m)\) is invariant under positive dilations, and hence is conical about the origin. A globally homogeneous decoder can therefore represent only conical image sets, which is too restrictive for a generic curved manifold.
+% \end{remark}
+
+% In order to return to ambient space, the decoder must invert the latent radial scaling of the encoder while still reconstructing an ambient manifold that need not, in general, be globally homogeneous. To achieve this, we retain a homogeneous leading term and introduce a non-homogeneous correction acting  on the decoded direction. The correction is parameterised so that the decoder remains flexible at finite scales, while retaining homogeneity in the radial limit.
+
+% Writing the latent variable in polar form as
+% \[
+% z=\rho\,\eta,
+% \qquad
+% \rho:=\|z\|_{q},
+% \qquad
+% \eta:=\frac{z}{\|z\|_{q}}\in\mathbb{S}^{m-1}_{q},
+% \]
+% the encoder scales ambient radius by the power \(p\), so the decoder is chosen with leading radial factor \(\rho^{1/p}\). We first define the homogeneous decoder
+% \[
+% h_{\mathrm{hom}}(z)
+% =
+% \rho^{1/p}\,\tilde a(\eta)\,\tilde e(\eta),
+% \qquad
+% \tilde e:\mathbb{S}^{m-1}_{q}\to \mathbb{S}^{D-1}_{q},
+% \qquad
+% \tilde a:\mathbb{S}^{m-1}_{q}\to (0,\infty),
+% \]
+% with angular map \(\tilde e\) and decoder-side magnitude term \(\tilde a\). This is the natural inverse analogue of the encoder parameterisation \(f(x)=\|x\|_{q}^p\,a(\theta)\,e(\theta)\).
+
+% Whilst \(h_{\mathrm{hom}}\) suffices for homogeneous or cone-like manifolds, one must forgo global homogeneity of the decoder in order to represent more general smooth curved manifolds. To this end, we introduce a radius-dependent angular correction. Let
+% \[
+% \delta:\mathbb{S}^{m-1}_{q}\times(0,\infty)\to \mathbb{R}^D
+% \]
+% denote the correction term, parameterised by the latent direction \(\eta\) and the ambient radius \(r=\|x\|_q\).
+% We define the corrected decoded angle
+% \[
+% \tilde c(\eta,r)
+% :=
+% \frac{\tilde e(\eta)+\delta(\eta,r)}
+% {\bigl\|\tilde e(\eta)+\delta(\eta,r)\bigr\|_{q}}
+% \in \mathbb{S}^{D-1}_{q},
+% \]
+% which is well-defined provided
+% \[
+% \bigl\|\tilde e(\eta)+\delta(\eta,r)\bigr\|_{q}\neq 0.
+% \]
+% The full decoder is then
+% \[
+% h(z,r)
+% =
+% \rho^{1/p}\,\tilde a(\eta)\,\tilde c(\eta,r),
+% \qquad
+% z\in\mathbb{R}^m\setminus\{0\},
+% \]
+% where \(r=\|x\|_q\) is the ambient radius recovered from the encoder during training, or estimated as \(\hat r=\rho^{1/p}\tilde a(\eta)\) during standalone decoding.
+
+% If \(\delta\equiv 0\), then \(\tilde c(\eta,r)=\tilde e(\eta)\) for all \((\eta,r)\), and the decoder reduces to the positively homogeneous case \(h_{\mathrm{hom}}(z)\) of degree \(1/p\). More generally, a sufficient condition for asymptotic directional homogeneity is~\todo{Replace this display and the surrounding prose with: ``\textbackslash begin\{lemma\}[Uniform angular convergence] If $\Delta$ is continuous on $\mathbb{S}^{m-1}_q\times[0,1]$ and $\Delta(\eta,0)=0$ then $\sup_\eta\|\delta(\eta,r)\|\to 0$ as $r\to\infty$. \textbackslash end\{lemma\}'' Proof (Heine--Cantor on compact set) goes to \Cref{sec:appendix:proofs} (already drafted in APX-A4).}
+% \[
+% \sup_{\eta\in\mathbb{S}^{m-1}_{q}}\|\delta(\eta,r)\|\to 0
+% \qquad\text{as }r\to\infty,
+% \]
+% together with a nondegeneracy condition ensuring that
+% \[
+% \inf_{\eta,r}\bigl\|\tilde e(\eta)+\delta(\eta,r)\bigr\|_{q}>0.
+% \]
+% Under these assumptions,
+% \[
+% \sup_{\eta\in\mathbb{S}^{m-1}_{q}}
+% \bigl\|\tilde c(\eta,r)-\tilde e(\eta)\bigr\|\to 0
+% \qquad\text{as }r\to\infty,
+% \]
+% so the decoded direction becomes asymptotically independent of the ambient radius.
+
+% A convenient way of implementing such a \(\delta\) with the desired properties is to undertake the following construction. To begin, transform the ambient radius \(r=\|x\|_q\) via
+% \[
+% s(r):=\frac{1}{1+r}\in(0,1),
+% \]
+% so that the limit \(r\to\infty\) is the boundary point \(s=0\).\todo{We drive $s$ by the ambient radius $r=\|x\|_q$ rather than the latent radius $\rho=\|z\|$. Using $\rho$ allows the encoder amplitude $a(\theta)$ to shrink, compressing latent radii and collapsing the dynamic range of $s$; the correction penalty then inadvertently suppresses $\delta$ uniformly rather than only in the tail. Using $r$ decouples $s$ from the learned amplitude and ensures the correction exploits the full $(0,1)$ range at the natural data scale. During standalone decoding from $z$, we estimate $\hat r = \rho^{1/p}\tilde a(\eta)$.} Then, let
+% \[
+% \Delta:\mathbb{S}^{m-1}_{q}\times[0,1]\to \mathbb{R}^D
+% \]
+% be a continuous neural network and define
+% \[
+% \delta(\eta,r)
+% :=
+% \Delta\bigl(\eta,s(r)\bigr)-\Delta(\eta,0).
+% \]
+% A short compactness argument (\Cref{sec:appendix:proofs}) gives
+% \(\sup_{\eta}\|\delta(\eta,r)\|\to 0\) as \(r\to\infty\), so the angular
+% correction vanishes in the radial limit and the decoder is
+% asymptotically homogeneous (provided the denominator remains bounded
+% away from zero).
+
+% Via this construction, asymptotic homogeneity is built into the architecture, while finite-scale non-homogeneous geometry is still expressible via variation in \(\Delta(\eta,s)\) over \(s\in(0,1)\).~\todo{Write a Proposition in \Cref{sec:appendix:extra-theory}: ``For any
+% $\varepsilon>0$ and any smooth map $c^*:\mathbb{S}^{m-1}_q\times
+% [0,1]\to\mathbb{R}^D$ there exists a network $\Delta$ such that
+% $\sup\|\tilde c-c^*\|<\varepsilon$ on compact angular support.'' Cite
+% universal-approximation theorem for MLPs on compact sets.}
+% \todo{Remark that in several practical examples we have seen, the correction term isn't even needed (i.e., manifold hypothesis is assumed to hold and in reality holds only loosely and dimension of manifold is unknown/non integer etc) basically if the dimension of the manifold is unknown and the latent dim is higher than necessary, the HAE might be able to use these to correct for non-homogeneous manifolds in some way while not using the correction term}
+% \todopar{M-THM2 (MOVE to \S4.2 as a numbered Theorem)}{Promote the
+% Remark below to Theorem~\ref{thm:decoder-tail-equivalence}. Working
+% statement: ``Let $X$ be regularly varying on $\mathbb{O}_D$ with tail
+% index $\alpha>0$, let $f$ be a $p$-homogeneous encoder with $Z=f(X)$
+% regularly varying with index $\alpha/p$, and let
+% $h(z,r)=\rho^{1/p}\tilde a(\eta)\tilde c(\eta,r)$ be the proposed
+% decoder with $h_{\mathrm{hom}}(z)=\rho^{1/p}\tilde a(\eta)\tilde e(\eta)$
+% its homogeneous leading term. Assume
+% (A1) $\tilde a:\mathbb{S}^{m-1}\to(0,\infty)$ continuous and bounded
+% ($a_{\min}\le\tilde a\le a_{\max}$);
+% (A2) $\tilde e:\mathbb{S}^{m-1}\to\mathbb{S}^{D-1}$ continuous;
+% (A3) $\delta:\mathbb{S}^{m-1}\times(0,\infty)\to\mathbb{R}^D$ continuous
+% with $\sup_\eta\|\delta(\eta,r)\|\to 0$ as $r\to\infty$;
+% (A4) $\inf_{\eta,r}\|\tilde e(\eta)+\delta(\eta,r)\|_q > 0$.
+% Then $h(f(X),\|X\|)$ and $h_{\mathrm{hom}}(f(X))$ are tail-equivalent on
+% $\mathbb{R}^D\setminus\{0\}$: both are regularly varying with scaling
+% $b_X$ and tail measure $(h_{\mathrm{hom}}\circ f)_\#\mu_X$.''
+
+% \textbf{Prose prompts (for the Theorem statement + surrounding discussion):}
+% (1) What does ``tail-equivalent'' mean concretely for the reader -- same scaling function $b_X$, same tail measure -- and does the prose give this in words before the theorem statement?
+% (2) Are the four hypotheses (A1)--(A4) each \emph{necessary} -- can any be weakened, and is there a one-line explanation of why each is present (A1: decoder amplitude bounded; A2: angular map continuous; A3: correction vanishes; A4: denominator bounded away from zero)?
+% (3) In a Corollary or Remark, does the paper spell out the practical takeaway: ``the reconstructed process $h(f(X))$ has the same tail index $\alpha$ as $X$'' -- since this is what a practitioner actually wants?
+% (4) Is there a one-line comparison to standard decoder tail behaviour (Lipschitz decoder gives only $\alpha$-preservation up to scaling; our Theorem gives it with a \emph{computable} tail measure via the pushforward)?}
+% \begin{theorem}[Tail equivalence under asymptotically homogeneous decoding]
+% \label{thm:decoder-tail-equivalence}
+% \todo{State with the hypotheses from M-THM2 above: (A1)--(A4). Conclusion: $h(f(X),\|X\|)$ and $h_{\mathrm{hom}}(f(X))$ are tail-equivalent on $\mathbb{O}_D$, both regularly varying with scaling $b_X$ and tail measure $(h_{\mathrm{hom}}\circ f)_\#\mu_X$. Proof in \Cref{sec:appendix:proofs}.}
+% \end{theorem}
+
+% \todopar{M-T3}{Justify $\omega(r)=\log(1+r)$ in one sentence: grows
+% slowly enough not to dominate near the bulk, unboundedly enough to force
+% asymptotic vanishing in the tail.
+
+% \textbf{Prose prompts:}
+% (1) What are the two failure modes the weight $\omega$ must avoid -- (a) too flat: correction doesn't vanish in the tail; (b) too steep: bulk reconstruction hurt -- and how does $\log(1+r)$ sit between them?
+% (2) Is there a general \emph{class} of valid $\omega$ (unbounded, nondecreasing, sublinear) that the theory permits, and would naming that class make the choice look principled rather than arbitrary?
+% (3) Should the prose flag that $\omega$ is a \emph{design choice}, not a hyperparameter to be tuned on each dataset -- i.e.\ $\log(1+r)$ is the default, period?}
+% \subsection{Training objective}
+% \label{sec:training-objective}
+
+% Let \(\hat X = h(f(X))\) denote the reconstruction of \(X\). The encoder and decoder are trained jointly using a reconstruction loss together with a radius-weighted penalty on the decoded angular correction term to incentivise the decoder to revert to homogeneity where possible. Fix a norm
+% \[
+% \|\cdot\|_{\mathrm{pen}}
+% \]
+% on \(\mathbb{R}^D\), and let
+% \[
+% \omega:(0,\infty)\to(0,\infty)
+% \]
+% be a weight function, typically assigning (weakly) greater losses to deviations from homogeneity at larger ambient radii. Writing \(r=\|X\|_q\) and \(Z=f(X)=\rho\eta\), we define the per-sample objective by
+% \[
+% \mathcal{L}(X)
+% =
+% \mathcal{L}_{\mathrm{recon}}(X,\hat X)
+% +
+% \lambda_{\mathrm{cor}}\,
+% \omega(r)\,
+% \bigl\|
+% \tilde c(\eta,r)-\tilde e(\eta)
+% \bigr\|_{\mathrm{pen}}.
+% \]
+% The first term denotes a standard reconstruction loss (for example, an \(L_2\)-type loss), while the second penalises radius-dependent deviations from the homogeneous angular decoder. The decoder is therefore encouraged to use the non-homogeneous term only where it materially improves reconstruction, while defaulting to the homogeneous mechanism whenever possible. The weight \(\lambda_\mathrm{cor}\) controls the balance between these two terms; in practice it is adapted during training (see the implementation details below).\todo{rewrite more intuitively: open with a plain-English sentence on "penalise non-homogeneous behaviour more at larger radii"; cap generality to what the theory needs (see M-T1)}
+
+% The exact choice of \(\omega\) depends on the geometry of the manifold being modelled. If the manifold is highly curved at large radial scales, one does not want \(\omega\) to create a large loss when the network tries to deviate from homogeneity in a way that improves reconstruction. Conversely, if the manifold is well approximated by its asymptotic conical geometry beyond a relatively small radial distance, one would want \(\omega\) to increase more quickly so as to penalise unnecessary large-scale deviations from homogeneity. A simple choice used in our implementation is
+% \[
+% \omega(r)=\log(1+r).
+% \]
+
+% This results in the intended adaptive asymptotic homogeneity. At moderate scales, the correction term can capture finite-scale curvature and other departures from homogeneous geometry. At large scales, the architectural condition \(\delta(\eta,r)\to 0\) suppresses the influence of the correction term, while the radius-weighted penalty discourages unnecessarily large angular corrections. Thus, at large radial scales,
+% \[
+% \tilde c(\eta,r)\approx \tilde e(\eta),
+% \]
+% and the decoder is governed primarily by its homogeneous component. In this sense, reconstruction is designed to remain compatible with the tail behaviour induced by the encoder.
+
+% Implementation details, including the full adaptive $\lambda_{\mathrm{cor}}$ schedule, are given in \Cref{sec:appendix:training}.
+
+% \todo{Add 2-sentence Remark in \S4.4 or \S7: ``The HAE preserves the
+% \emph{global} tail index (the rate of decay of the ambient norm). It
+% does not guarantee marginal (per-coordinate) tail preservation; for
+% applications requiring marginal calibration, an additional per-variable
+% penalty term in the loss would be needed.''}
+
+% \todo{could we add in a radius weighting for the mse too to incentivise the encoder to get reconstructions of tail samples better? this would help extrapolation}
+
+% % ==============================================================================
+% % SECTION 4: THEORETICAL ANALYSIS  (target: ~1 page body)
+% % ==============================================================================
+% \section{Theoretical analysis}
+% \label{sec:theory}
+
+% \subsection{Encoder tail transport}
+% \label{sec:theory:encoder}
+% \todopar{T-1}{Restate
+% Proposition~\ref{prop:reg-variation-under-homogeneous-encoders} with
+% tightened hypotheses (I-M13: drop redundant condition (2) if verified).
+% One-line proof sketch. Full proof in App~A.
+
+% \textbf{Prose prompts:}
+% (1) What is the one-line proof sketch -- ``apply the mapping theorem \cite{lindskog_regularly_2014} to the homogeneous $f$; homogeneity delivers the scaling $\lambda^{-\alpha/p}$ directly''?
+% (2) Does the prose name the \emph{three} ingredients (continuity of $f$, preimage-bounded-away-from-origin, homogeneity) and map each to a line of the proof?
+% (3) Is the tail-index identity $\alpha/p$ highlighted as the key quantitative consequence (not just the existence of $f_\#\mu$) -- because the $1/p$ factor is what the user tunes?}
+% \todopar{T-2}{Add a Remark: $p$ is a chosen hyperparameter; it trades
+% expressiveness (larger $p$ $=$ more aggressive radial scaling) against
+% numerical stability (large $p$ amplifies radii). We use $p = 1$
+% throughout.
+
+% \textbf{Prose prompts:}
+% (1) What is the intuition for \emph{choosing} $p$ -- if the ambient tail index is $\alpha$, the latent tail index is $\alpha/p$, so $p$ is the lever that rescales the heaviness?
+% (2) When would a practitioner want $p\neq 1$ -- e.g.\ to match a target latent tail index, or to equalise dimensions in a multi-modal setup?
+% (3) Is there a floor and ceiling: $p\in[?,?]$ (numerical stability at small $p$; saturation of gradients at large $p$) and is $p=1$ defended as the pragmatic default?}
+
+% The significance of the mapping theorem in our work is that it enables regular variation to be transported from ambient space to latent space through a sufficiently regular encoder. When this encoder is homogeneous, one obtains not only convergence of pushforward measures (and thus existence of the latent tail measure) but also an explicit description of the resulting tail index.
+
+% \todopar{I-M13}{Check the hypothesis list: condition~(2)
+% ``$f^{-1}(A)$ is bounded away from $0$'' is \emph{implied} by (3)
+% $p$-homogeneity + (1) continuity. Verify and drop (2) if redundant; reviewers
+% will flag this.
+
+% \textbf{Prose prompts:}
+% (1) Is the implication watertight -- if $A \subset \mathbb{O}_m$ is bounded away from $0$ (so $\inf_{y\in A}\|y\|_q > 0$) and $f$ is $p$-homogeneous, then $f^{-1}(A)$ is bounded away from $0$ by $(\inf\|A\|/\|g\|_\infty)^{1/p}$?
+% (2) If (2) is dropped, does the Proposition statement still read cleanly -- i.e.\ is the remaining hypothesis list self-contained?
+% (3) Should a one-line Remark be added noting the redundancy was intentional in the first draft (didactic) and is now tightened for submission?}
+% \begin{proposition}[Regular variation under homogeneous encoders]
+% \label{prop:reg-variation-under-homogeneous-encoders}
+% Let \(X\) be regularly varying on \(\mathbb{O}_D\) with scaling function \(b\), index \(\alpha>0\), and tail measure \(\mu\), i.e.
+% \[
+% t\,\mathbb{P}\!\left(\frac{X}{b(t)} \in \cdot \right)
+% \;\xrightarrow[t\to\infty]{}\;
+% \mu(\cdot)
+% \qquad
+% \text{in } \mathbb{M}(\mathbb{O}_D).
+% \]
+% Let
+% \[
+% f:\mathbb{O}_D \to \mathbb{O}_m
+% \]
+% be measurable and suppose:
+% \begin{enumerate}
+%     \item \(f\) is continuous \(\mu\)-almost everywhere;
+%     \item for every measurable \(A \subset \mathbb{O}_m\) bounded away from \(0\), the preimage \(f^{-1}(A)\) is bounded away from \(0\) in \(\mathbb{O}_D\);
+%     \item \(f\) is positively homogeneous of degree \(p>0\), i.e.
+%     \[
+%     f(\lambda x)=\lambda^p f(x),
+%     \qquad \lambda>0.
+%     \]
+% \end{enumerate}
+% Then \(f(X)\) is regularly varying on \(\mathbb{O}_m\) with scaling function \(b_f(t)=b(t)^p\) and tail measure
+% \[
+% \mu_f = f_{\#}\mu = \mu\circ f^{-1}.
+% \]
+% Moreover, \(\mu_f\) is \(\frac{\alpha}{p}\)-homogeneous:
+% \[
+% \mu_f(\lambda A)=\lambda^{-\frac{\alpha}{p}}\mu_f(A),
+% \qquad
+% \lambda>0.
+% \]
+% Equivalently, \(f(X)\) is regularly varying with tail index \(\frac{\alpha}{p}\).
+% \end{proposition}
+
+% \noindent\emph{Proof sketch.} Apply the mapping theorem
+% (\Cref{thm:mapping-theorem}) to \(f\) to transport \(\mu\) onto
+% \(\mathbb{O}_m\); \(p\)-homogeneity rescales the preimage of
+% \(\lambda A\) as \(\lambda^{1/p} f^{-1}(A)\), whence
+% \(\mu_f(\lambda A)=\lambda^{-\alpha/p}\mu_f(A)\). Full proof in
+% \Cref{sec:appendix:proofs} (APX-A2).
+
+% \begin{remark}
+% Proposition~\ref{prop:reg-variation-under-homogeneous-encoders} is stated for maps \(f:\mathbb{O}_D\to\mathbb{O}_m\). A more general version would allow \(f:\mathbb{O}_D\to\mathbb{R}^m\), provided that \(\mu(f^{-1}(\{0\}))=0\); in that case the latent tail measure is the restriction of \(f_{\#}\mu\) to \(\mathbb{O}_m\).
+% \end{remark}
+
+% \subsection{Decoder tail equivalence}
+% \label{sec:theory:decoder}
+% \todopar{T-3}{State Theorem~2 in the form drafted in \textsc{m-thm2}
+% (tail-equivalence of $h(Z)$ and $h_{\mathrm{hom}}(Z)$). One-line proof
+% sketch. Full proof in App~A.
+
+% \textbf{Prose prompts:}
+% (1) What is the one-line proof sketch -- ``$h - h_{\mathrm{hom}} = \rho^{1/p}\tilde a(\eta)(\tilde c(\eta,r)-\tilde e(\eta))$, which is $o(\rho^{1/p})$ by uniform angular convergence, so the leading term dominates in the tail''?
+% (2) Is the role of assumption (A4) (nondegenerate denominator) made explicit in the sketch -- it's what guarantees $\tilde c$ stays bounded as the perturbation vanishes?
+% (3) Does the sketch close by appealing to the Lemma (M-D5) rather than repeating its content?}
+% \todopar{T-4}{Corollary: consequently, $h(Z)$ has tail index $\alpha$
+% when $Z$ has tail index $\alpha/p$; the encoder--decoder composition
+% leaves the ambient tail index invariant. Make this prominent.
+
+% \textbf{Prose prompts:}
+% (1) Is this the \emph{headline} corollary of the theory -- i.e.\ ``reconstruction preserves the ambient tail index $\alpha$, full stop'' -- and is it stated in one sentence the reader can quote?
+% (2) Does the Corollary make explicit the round-trip identity: encoder scales $\alpha\mapsto\alpha/p$ (Prop.~1), decoder scales $\alpha/p\mapsto\alpha$ (Thm.~2), composition is the identity on tail index?
+% (3) Should this be promoted visually -- boxed, starred, or given its own numbered tag -- so a reviewer skimming theorem statements catches it?}
+% \todopar{T-5}{Reuse the uniform-angular-convergence lemma (M-D5, now in
+% \S\ref{sec:decoder-architecture}) by label; no restatement.
+
+% \textbf{Prose prompts:}
+% (1) Is the cross-reference wording precise -- ``by Lemma~\ref{lem:uniform-angular-convergence}'' -- rather than a vague ``by the preceding lemma''?
+% (2) Does the Theorem statement make clear which Lemma hypothesis it is consuming ($\sup_\eta\|\delta(\eta,r)\|\to 0$ or the compact-domain construction) so the reader doesn't need to chase two labels?}
+
+% \todopar{I-B3}{Write a formal Remark ``Exact vs.\ bounded radial
+% preservation'' in \S\ref{sec:encoder-architecture}: (i) $a\equiv 1$ --
+% exact; (ii) $a$ bounded -- tail-preserving modulo angular reweighting;
+% (iii) $a$ unrestricted positive -- maximal expressiveness (our default).
+% See \Cref{sec:appendix:canonical-form} for the full factorisation.
+
+% \textbf{Prose prompts:}
+% (1) What \emph{specifically} changes across the three regimes -- is it the latent tail measure ($f_\#\mu$), the Hill-plot slope, or only the angular reweighting of $\mu_f$?
+% (2) Can the trade-off be stated as ``expressiveness on the $a$-axis vs.\ interpretability on the $\mu_f$-axis'' so the reader sees why (iii) is chosen as default despite (i) being cleanest?
+% (3) Is there an empirical knob a practitioner can reach for if they want (i) or (ii) -- e.g.\ a clamp on $a(\theta)$ -- and should the Remark mention it?}
+
+
+
+\section{Theoretical consequences}
+\label{sec:theory}
+
+\Cref{prop:reg-variation-under-homogeneous-encoders} transports regular
+variation from the ambient space into the latent space, changing the tail index
+from \(\alpha\) to \(\alpha/p\). \Cref{thm:decoder-tail-equivalence} then shows
+that the asymptotically homogeneous decoder has the same tail law as its
+homogeneous leading term. Combining the two results gives tail-index
+preservation for the encoder--decoder round trip.
+
+\begin{corollary}[Tail-index preservation under the round trip]
+\label{cor:tail-index-preservation}
+Let \(X\) be regularly varying on \(\mathbb{O}_D\) with scaling function
+\(b_X\), tail index \(\alpha>0\), and tail measure \(\mu_X\). Let
+\(f:\mathbb{O}_D\to\mathbb{O}_m\) be a \(p\)-homogeneous encoder satisfying
+the hypotheses of
+\Cref{prop:reg-variation-under-homogeneous-encoders}, and set
+\(Z=f(X)\). Let \(h\) be an asymptotically homogeneous decoder satisfying
+\Cref{thm:decoder-tail-equivalence} with exponent \(r=1/p\). Then
+\(h(f(X))\) is regularly varying on \(\mathbb{O}_D\) with scaling function
+\(b_X\), tail index \(\alpha\), and tail measure
+\[
+(h_{\mathrm{hom}}\circ f)_{\#}\mu_X.
+\]
+In particular, the encoder--decoder composition preserves the radial tail
+index:
+\[
+\alpha
+\;\xrightarrow{\;f\;}\;
+\alpha/p
+\;\xrightarrow{\;h\;}\;
+\alpha.
+\]
+\end{corollary}
+
+\begin{proof}
+By \Cref{prop:reg-variation-under-homogeneous-encoders},
+\(Z=f(X)\) is regularly varying on \(\mathbb{O}_m\) with scaling function
+\[
+b_Z(t)=b_X(t)^p,
+\]
+tail index \(\alpha/p\), and tail measure
+\[
+\mu_Z=f_{\#}\mu_X.
+\]
+Applying \Cref{thm:decoder-tail-equivalence} with \(r=1/p\) gives that
+\(h(Z)\) is regularly varying with scaling function
+\[
+b_Z(t)^{1/p}
+=
+\bigl(b_X(t)^p\bigr)^{1/p}
+=
+b_X(t)
+\]
+and tail measure
+\[
+(h_{\mathrm{hom}})_{\#}\mu_Z
+=
+(h_{\mathrm{hom}})_{\#}f_{\#}\mu_X
+=
+(h_{\mathrm{hom}}\circ f)_{\#}\mu_X.
+\]
+The homogeneity degree of the limiting measure is therefore \(-\alpha\), so the
+round-trip tail index is \(\alpha\).
+\end{proof}
+
+\begin{remark}[Tail index versus full tail-measure recovery]
+\label{rmk:index-vs-measure}
+\Cref{cor:tail-index-preservation} preserves the radial tail index and gives
+an explicit reconstructed tail measure. It does not, by itself, imply
+\[
+(h_{\mathrm{hom}}\circ f)_{\#}\mu_X=\mu_X.
+\]
+Full ambient tail-measure recovery would require the homogeneous round-trip
+\(h_{\mathrm{hom}}\circ f\) to preserve the original tail measure. This is an
+additional asymptotic inverse condition, not a consequence of homogeneity alone.
+\end{remark}
+
+The practical implication is therefore precise: latent-space extreme-value
+analysis remains calibrated at the level of the global radial tail index, and
+the reconstructed process has a computable tail measure obtained by homogeneous
+pushforward. Applications requiring exact angular tail-measure recovery must
+either impose or empirically verify the stronger condition in
+\Cref{rmk:index-vs-measure}.

@@ -1,11 +1,13 @@
-"""exp01: curved surface in R^3 on the paper's updated architecture.
+"""exp08: curved surface with Pareto-margin pre-standardisation.
 
-Continuity anchor with the original minimal example. Trains the
-HomogeneousAE and a StandardAE baseline on the same curved surface
-(D=3, m=2) and emits separate single-panel PNGs: 3-D scatters of
-truth + reconstructions, the encoder homogeneity residual scan, and
-the full exp02 diagnostic panel set (latent-vs-ambient radius, Hill
-curves, binned recon error, HAE correction diagnostics).
+Mirrors exp01's data + training + evaluation pipeline. Before any
+training, each ambient coordinate of the train / val / test data is
+mapped through a per-marginal GPD-tail PIT (rank bulk + GPD tail) and
+then the standard Pareto inverse CDF, so the joint copula is preserved
+but every marginal becomes a standard Pareto with the configured tail
+index. Two extra diagnostic figures verify the transform itself
+(per-dim histograms and Hill curves before vs after); the rest of the
+plot suite is identical to exp01.
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ from pathlib import Path
 import numpy as np
 from lib.artifacts import artifact_path
 from lib.cli import init_experiment, parse_standard_args
-from lib.config import CurvedSurfaceConfig
+from lib.config import CurvedSurfaceParetoMarginsConfig
 from lib.data import generate_curved_surface
 from lib.evaluation import serializable, train_zoo
 from lib.models import (
@@ -25,13 +27,15 @@ from lib.models import (
     compute_matched_hidden_dim,
     count_parameters,
 )
+from lib.preprocessing import fit_apply_pareto_margins
 from lib.viz import (
     MODEL_LABELS,
     plot_training_history,
-    save_architecture_thumbnails,
     save_curved_surface_scatter,
     save_diagnostic_panel_set,
     save_hero_curved_surface,
+    save_marginal_pareto_hill,
+    save_marginal_pareto_histograms,
     save_overlay_reconstruction,
     save_overlay_reconstruction_panels,
 )
@@ -43,14 +47,46 @@ def _label(name: str) -> str:
 
 def main() -> None:
     args = parse_standard_args(description=__doc__)
-    config = init_experiment(Path(__file__), CurvedSurfaceConfig)
+    config = init_experiment(Path(__file__), CurvedSurfaceParetoMarginsConfig)
 
-    train_data = generate_curved_surface(config.n_train, seed=config.seed + 1)
-    val_data = generate_curved_surface(config.n_val, seed=config.seed + 2)
-    test_data = generate_curved_surface(config.n_test, seed=config.seed + 3)
+    train_raw = generate_curved_surface(config.n_train, seed=config.seed + 1)
+    val_raw = generate_curved_surface(config.n_val, seed=config.seed + 2)
+    test_raw = generate_curved_surface(config.n_test, seed=config.seed + 3)
+
+    if not config.pre_standardize_to_pareto_margins:
+        raise RuntimeError(
+            "exp08 requires pre_standardize_to_pareto_margins=True; check the "
+            "CurvedSurfaceParetoMarginsConfig defaults."
+        )
+
+    print(f"Pre-standardising marginals to Pareto(alpha="
+          f"{config.pareto_target_alpha:g}) via GPD-tail PIT "
+          f"(threshold q={config.pit_threshold_quantile})")
+    train_data, (val_data, test_data), _ = fit_apply_pareto_margins(
+        train_raw, [val_raw, test_raw],
+        pareto_alpha=config.pareto_target_alpha,
+        threshold_quantile=config.pit_threshold_quantile,
+    )
+
+    output = Path(config.output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+
+    # Diagnostic figures for the transform itself (use train data so the
+    # before/after comparison is on the same samples).
+    save_marginal_pareto_histograms(
+        train_raw.numpy(),
+        train_data.numpy(),
+        output / "fig_pareto_marginal_histograms.png",
+    )
+    save_marginal_pareto_hill(
+        train_raw.numpy(),
+        train_data.numpy(),
+        output / "fig_pareto_marginal_hill.png",
+        target_alpha=config.pareto_target_alpha,
+    )
 
     model_names = ("HomogeneousAE", "StandardAE")
-    seed_dir = Path(config.output_dir) / "seed0"
+    seed_dir = output / "seed0"
     cached = {
         name: artifact_path(seed_dir, name).exists() for name in model_names
     }
@@ -84,10 +120,8 @@ def main() -> None:
     for name, model in models.items():
         print(f"  {name}: {count_parameters(model):,} parameters")
 
-    # The curved-surface construction uses a smooth radial profile whose
-    # heavy tail comes from a Student-t with df = student_df_t. That value
-    # is the ground-truth alpha for the Hill plot.
-    alpha_true = float(config.student_df_t)
+    # Ambient tail index of the *transformed* data is the Pareto target.
+    alpha_true = float(config.pareto_target_alpha)
 
     metrics_by_model = train_zoo(
         models,
@@ -101,13 +135,8 @@ def main() -> None:
         force_retrain=args.force_retrain,
     )
 
-    output = Path(config.output_dir)
     x_test = metrics_by_model["HomogeneousAE"]["_x_test"]
     truth_radii = np.linalg.norm(x_test, axis=1)
-    # Shared LogNorm range across truth, per-model, and the hero so colours
-    # are directly comparable. Cap vmax at the 97th percentile of the
-    # visible bulk so a handful of extreme outliers don't compress the
-    # colour gradient across the main cluster.
     positive_truth = truth_radii[truth_radii > 0]
     color_vmin = float(positive_truth.min()) if positive_truth.size else 1.0
     color_vmax = float(np.quantile(truth_radii, 0.97))
@@ -146,21 +175,8 @@ def main() -> None:
         output / "fig_hero.png",
         vmin=color_vmin, vmax=color_vmax,
     )
-
-    # Title-free thumbnails consumed by the architecture diagram in the
-    # paper (2025_report/neurips_2025.tex). Vector PDF siblings are
-    # written automatically alongside the PNGs by ``_finish``.
-    hae_metrics = metrics_by_model["HomogeneousAE"]
-    save_architecture_thumbnails(
-        hae_metrics["_x_test"],
-        hae_metrics["_latent_codes"],
-        hae_metrics["_x_hat"],
-        output,
-    )
-
     print(f"Wrote single-panel PNGs to {output}")
 
-    # Diagnostic training curves (not a paper figure)
     diagnostic_dir = output / "diagnostic"
     diagnostic_dir.mkdir(exist_ok=True)
     plot_training_history(
@@ -168,16 +184,16 @@ def main() -> None:
         diagnostic_dir / "training_history.png",
     )
 
-    # Persist scalar summary
     summary = {name: serializable(metrics_by_model[name]) for name in metrics_by_model}
     with open(output / "metrics.json", "w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=2, sort_keys=True)
 
     alpha_ambient = summary["HomogeneousAE"]["hill_ambient"]["alpha"]
-    print("\n=== exp01 summary ===")
-    print(f"  alpha_true (Student-t df)  = {alpha_true:.3f}")
-    print(f"  hill_ambient (from data)   = {alpha_ambient:.3f}")
-    print(f"  Prop 1 target (amb/p)      = {alpha_ambient / config.p_homogeneity:.3f}")
+    print("\n=== exp08 summary ===")
+    print(f"  alpha_true (Pareto target) = {alpha_true:.3f}")
+    print(f"  hill_ambient (post-PIT)    = {alpha_ambient:.3f}")
+    print(f"  Prop 1 target (amb/p)      = "
+          f"{alpha_ambient / config.p_homogeneity:.3f}")
     for name in metrics_by_model:
         row = summary[name]
         print(
@@ -185,9 +201,7 @@ def main() -> None:
             f"    reconstruction_mse  = {row['reconstruction_mse']:.5f}\n"
             f"    hill_latent         = {row['hill_latent']['alpha']:.3f}\n"
             f"    hill_drift_latent   = {row['hill_drift_latent']:.4f}\n"
-            f"    angular_tail_dist   = {row['angular_tail_distance']:.5f}\n"
-            f"    homogeneity_worst   = "
-            f"{row.get('homogeneity_error', {}).get('worst', float('nan')):.2e}"
+            f"    angular_tail_dist   = {row['angular_tail_distance']:.5f}"
         )
 
 

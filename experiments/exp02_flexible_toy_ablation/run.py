@@ -2,7 +2,7 @@
 
 Trains the three-model zoo (HomogeneousAE, StandardAE, PCA) on the
 flexible toy and saves the standard exp02 panel set via
-``save_exp02_panel_set``: latent-vs-ambient radius, Hill curves,
+``save_diagnostic_panel_set``: latent-vs-ambient radius, Hill curves,
 extrapolation, binned recon error, and HAE correction diagnostics.
 
 Also writes ``summary.json``, ``summary_table.csv``, and
@@ -11,23 +11,20 @@ Also writes ``summary.json``, ``summary_table.csv``, and
 
 from __future__ import annotations
 
+import argparse
 import json
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Dict, Mapping
 
 import numpy as np
-import torch
-
-import sys
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from lib.config import FlexibleToyConfig, ensure_output_dir  # noqa: E402
-from lib.evaluation import serializable  # noqa: E402
-from lib.sweep import MODEL_NAMES, SCALAR_METRIC_KEYS, train_zoo_multiseed  # noqa: E402
-from lib.viz import plot_training_history, save_exp02_panel_set  # noqa: E402
-
+from lib.cli import init_experiment, parse_standard_args
+from lib.config import FlexibleToyConfig
+from lib.evaluation import serializable
+from lib.sweep import MODEL_NAMES, SCALAR_METRIC_KEYS, train_zoo_multiseed
+from lib.viz import (
+    plot_training_history,
+    save_diagnostic_panel_set,
+)
 
 SUMMARY_METRIC_ORDER = (
     ("reconstruction_mse", "Recon MSE (bulk)", "sci"),
@@ -47,7 +44,7 @@ def _write_summary_csv(
     lines = ["metric," + ",".join(summary_table.keys())]
     for metric_key, display_name, _unit in metric_order:
         row = [display_name]
-        for model_name in summary_table.keys():
+        for model_name in summary_table:
             cell = summary_table[model_name].get(metric_key)
             if cell is None:
                 row.append("")
@@ -57,18 +54,60 @@ def _write_summary_csv(
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def _extra_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--tail-holdout-quantile", type=float, default=None,
+        help="Hold out samples with radius above this quantile as the test "
+             "set; train/val drawn from bulk. Strict extrapolation regime.",
+    )
+    parser.add_argument(
+        "--output-subdir", type=str, default=None,
+        help="Subdirectory under results/ for this run's outputs.",
+    )
+    parser.add_argument(
+        "--alpha", type=float, default=None,
+        help="Pareto tail index for the latent radius. Default 1.8 (heavy, "
+             "matches Hill-drift headline). Use 3.5 for a bounded training "
+             "envelope so extrapolation at lambda=10 is genuinely OOD.",
+    )
+    parser.add_argument(
+        "--kappa", type=float, default=None,
+        help="Curvature strength of the flexible embedding.",
+    )
+    parser.add_argument(
+        "--num-seeds", type=int, default=None,
+        help="Number of seeds for multi-seed aggregation. Overrides "
+             "FlexibleToyConfig.num_seeds.",
+    )
+
+
 def main() -> None:
-    output_dir = Path(__file__).resolve().parent / "results"
-    config = FlexibleToyConfig(output_dir=str(output_dir))
-    ensure_output_dir(config)
+    args = parse_standard_args(description=__doc__, extra=_extra_args)
 
-    torch.manual_seed(config.seed)
-    np.random.seed(config.seed)
+    config_kwargs: dict[str, object] = {
+        "tail_holdout_quantile": args.tail_holdout_quantile,
+    }
+    if args.alpha is not None:
+        config_kwargs["alpha"] = float(args.alpha)
+    if args.kappa is not None:
+        config_kwargs["kappa"] = float(args.kappa)
+    if args.num_seeds is not None:
+        config_kwargs["num_seeds"] = int(args.num_seeds)
 
-    print(f"Config: {config}")
-    print(f"Device: {config.device}")
+    config = init_experiment(
+        Path(__file__),
+        FlexibleToyConfig,
+        subdir=args.output_subdir,
+        **config_kwargs,
+    )
 
-    result = train_zoo_multiseed(config, verbose=True)
+    result = train_zoo_multiseed(
+        config,
+        seed_artifact_dir=Path(config.output_dir),
+        force_retrain=args.force_retrain,
+        require_cache=args.plot_only,
+        verbose=True,
+    )
     per_seed = result["per_seed"]
     aggregate = result["aggregate"]
 
@@ -78,7 +117,7 @@ def main() -> None:
 
     output = Path(config.output_dir)
 
-    save_exp02_panel_set(first_point, output, p=config.p_homogeneity)
+    save_diagnostic_panel_set(first_point, output, p=config.p_homogeneity)
     print(f"Wrote single-panel PNGs to {output}")
 
     # Diagnostic training curves (not a paper figure)
@@ -87,7 +126,7 @@ def main() -> None:
     diagnostic_dir.mkdir(exist_ok=True)
     plot_training_history(histories_by_model, diagnostic_dir / "training_history.png")
 
-    summary_table: Dict[str, Dict[str, Dict[str, float]]] = {
+    summary_table: dict[str, dict[str, dict[str, float]]] = {
         name: {
             key: {
                 "mean": float(aggregate[name][key]["mean"]),

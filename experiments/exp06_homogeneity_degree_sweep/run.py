@@ -18,39 +18,35 @@ and gets its single visual verification in exp01.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Dict, List, Mapping
+from typing import Any
 
 import numpy as np
-
-import sys
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from lib.config import FlexibleToyConfig, ensure_output_dir  # noqa: E402
-from lib.sweep import MODEL_NAMES, run_flexible_toy_sweep, write_sweep_json  # noqa: E402
-from lib.viz import save_exp02_panel_set, save_sweep_metric  # noqa: E402
+from lib.cli import init_experiment, parse_standard_args
+from lib.config import FlexibleToyConfig
+from lib.sweep import MODEL_NAMES, run_flexible_toy_sweep, write_sweep_json
+from lib.viz import save_diagnostic_panel_set, save_sweep_metric
 
 
 def _extract_scalar_series(
-    per_seed_points: List[Mapping[str, List[Mapping[str, Any]]]],
+    per_seed_points: list[Mapping[str, list[Mapping[str, Any]]]],
     path: tuple,
-) -> Dict[str, Dict[str, np.ndarray]]:
+) -> dict[str, dict[str, np.ndarray]]:
     """Collect mean/std across seeds of a scalar field nested inside metrics.
 
     ``path`` is a tuple of keys to follow inside each per-seed metrics dict
     (e.g. ``("hill_latent", "alpha")``). Models whose metrics lack the full
     path at any seed are dropped (e.g. PCA has no ``homogeneity_error`` key).
     """
-    series: Dict[str, Dict[str, np.ndarray]] = {}
+    series: dict[str, dict[str, np.ndarray]] = {}
     for model_name in MODEL_NAMES:
-        means: List[float] = []
-        stds: List[float] = []
+        means: list[float] = []
+        stds: list[float] = []
         ok_for_model = True
         for point in per_seed_points:
             seed_list = point.get(model_name, [])
-            values: List[float] = []
+            values: list[float] = []
             for seed_metrics in seed_list:
                 node: Any = seed_metrics
                 missing = False
@@ -79,19 +75,58 @@ def _extract_scalar_series(
     return series
 
 
+def _extract_scalar_series_seed0(
+    per_seed_points: list[Mapping[str, list[Mapping[str, Any]]]],
+    path: tuple,
+) -> dict[str, dict[str, np.ndarray]]:
+    """Same as ``_extract_scalar_series`` but reads seed 0 only (no band)."""
+    series: dict[str, dict[str, np.ndarray]] = {}
+    for model_name in MODEL_NAMES:
+        values: list[float] = []
+        ok_for_model = True
+        for point in per_seed_points:
+            seed_list = point.get(model_name, [])
+            if not seed_list:
+                ok_for_model = False
+                break
+            node: Any = seed_list[0]
+            missing = False
+            for key in path:
+                if not isinstance(node, Mapping) or key not in node:
+                    missing = True
+                    break
+                node = node[key]
+            if missing:
+                ok_for_model = False
+                break
+            try:
+                values.append(float(node))
+            except (TypeError, ValueError):
+                ok_for_model = False
+                break
+        if ok_for_model:
+            series[model_name] = {
+                "mean": np.asarray(values, dtype=np.float64),
+                "std": np.zeros(len(values), dtype=np.float64),
+            }
+    return series
+
+
 def main() -> None:
-    output_dir = Path(__file__).resolve().parent / "results"
-    base_config = FlexibleToyConfig(output_dir=str(output_dir))
-    ensure_output_dir(base_config)
+    args = parse_standard_args(description=__doc__)
+    base_config = init_experiment(Path(__file__), FlexibleToyConfig)
+    output = Path(base_config.output_dir)
 
     p_values = [0.5, 1.0, 2.0]
     result = run_flexible_toy_sweep(
         base_config=base_config,
         parameter_name="p_homogeneity",
         parameter_values=p_values,
+        artifact_root=output,
+        force_retrain=args.force_retrain,
+        require_cache=args.plot_only,
     )
 
-    output = Path(base_config.output_dir)
     write_sweep_json(result, output / "sweep.json")
 
     per_seed_points = result["per_seed_points"]
@@ -121,15 +156,24 @@ def main() -> None:
     p_dense = np.linspace(min(p_values), max(p_values), 100)
     reference_curve = (p_dense, alpha_ambient / p_dense, r"$\hat\alpha_{\mathrm{amb}}/p$")
 
+    latent_hill_seed0 = _extract_scalar_series_seed0(
+        per_seed_points, path=("hill_latent", "alpha")
+    )
+    latent_hill_series_seed0 = {
+        name: {"hill_latent_alpha": series}
+        for name, series in latent_hill_seed0.items()
+    }
+
     save_sweep_metric(
         parameter_values=p_values,
-        series_by_model=latent_hill_series,
+        series_by_model=latent_hill_series_seed0,
         output_path=output / "fig_latent_hill_vs_p.png",
         metric_key="hill_latent_alpha",
-        xlabel=r"homogeneity degree $p$",
-        ylabel=r"latent Hill $\hat\alpha$",
+        xlabel="Homogeneity Degree",
+        ylabel="Latent Hill Estimate",
         yscale="log",
         reference_curve=reference_curve,
+        show_bands=False,
     )
     print(f"Wrote fig_latent_hill_vs_p.png to {output}")
 
@@ -155,10 +199,10 @@ def main() -> None:
     with open(output / "exp06_summary.json", "w", encoding="utf-8") as handle:
         json.dump(summary_payload, handle, indent=2, sort_keys=True)
 
-    for value, point in zip(p_values, per_seed_points):
+    for value, point in zip(p_values, per_seed_points, strict=True):
         subdir = output / f"point_p_homogeneity={value}"
         subdir.mkdir(exist_ok=True)
-        save_exp02_panel_set(
+        save_diagnostic_panel_set(
             {name: point[name][0] for name in MODEL_NAMES},
             subdir,
             p=value,

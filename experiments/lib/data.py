@@ -2,9 +2,7 @@
 
 Two families of datasets:
 
-1. Curved surface in R^3 (ported unchanged from the minimal example) - used
-   for exp01 as an anchor regression test against the paper's updated
-   architecture.
+1. Curved surface in R^3 for exp01 as an attractive model for visualisation  
 
 2. Flexible-dimension toy manifold in R^D with intrinsic dimension m and
    closed-form tail index alpha, built as
@@ -30,7 +28,7 @@ import torch.nn as nn
 
 
 # -----------------------------------------------------------------------------
-# Curved surface (D = 3, m = 2) - ported from minimal_p_homogeneous_encoder.py
+# Curved surface (D = 3, m = 2)
 # -----------------------------------------------------------------------------
 
 

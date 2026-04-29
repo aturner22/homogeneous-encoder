@@ -8,7 +8,7 @@ returns a history dict compatible with the neural path.
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List
+from collections.abc import Callable
 
 import numpy as np
 import torch
@@ -23,8 +23,7 @@ from .models import (
     standard_loss,
 )
 
-
-LossFn = Callable[[torch.Tensor, Dict[str, torch.Tensor], float], Dict[str, torch.Tensor]]
+LossFn = Callable[[torch.Tensor, dict[str, torch.Tensor], float], dict[str, torch.Tensor]]
 
 
 def _select_loss_fn(model: nn.Module) -> LossFn:
@@ -44,11 +43,12 @@ def _run_epoch(
     *,
     train: bool,
     lambda_cor_override: float | None = None,
-) -> Dict[str, float]:
+) -> dict[str, float]:
+    """Run one train/eval pass, returning loss aggregates."""
     model.train(train)
-    totals: List[float] = []
-    recons: List[float] = []
-    penalties: List[float] = []
+    totals: list[float] = []
+    recons: list[float] = []
+    penalties: list[float] = []
 
     effective_lambda = lambda_cor_override if lambda_cor_override is not None else config.lambda_cor
 
@@ -85,13 +85,16 @@ def train(
     config: TrainConfig,
     *,
     verbose: bool = True,
-) -> Dict[str, List[float]]:
+) -> dict[str, list[float]]:
     """Train a neural autoencoder with Adam and best-val checkpointing."""
     loss_fn = _select_loss_fn(model)
     model.to(config.device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=config.learning_rate,
+        weight_decay=getattr(config, "weight_decay", 0.0),
+    )
 
-    history: Dict[str, List[float]] = {
+    history: dict[str, list[float]] = {
         "epoch": [],
         "train_total": [],
         "train_reconstruction": [],
@@ -105,22 +108,25 @@ def train(
     # Checkpoint metric: "val_total" (legacy) or "val_reconstruction"
     checkpoint_key = "reconstruction" if config.checkpoint_metric == "val_reconstruction" else "total"
 
-    # Adaptive lambda state: warmup phase (lambda=0) then growth phase
-    if config.adaptive_lambda:
-        lambda_eff = 0.0
-        ema_recon = None
-        baseline_recon = None  # set at end of warmup
-        warmup_epochs = int(getattr(config, "lambda_warmup", 50))
-    else:
-        lambda_eff = config.lambda_cor
-        ema_recon = None
-        baseline_recon = None
-        warmup_epochs = 0
+    # Two-phase schedule for HAE, single phase for StandardAE:
+    #   HAE warmup — λ=0. Track best val_reconstruction; exit when it
+    #     stops improving for `recon_patience` epochs, or hit
+    #     `warmup_max_epochs`. At exit, freeze an EMA baseline.
+    #   HAE penalty — ratchet λ up/down against the baseline; early
+    #     stop on `penalty_patience` against the checkpoint metric.
+    #   StandardAE — no warmup / no penalty. Use `recon_patience` as
+    #     its sole early-stopping budget.
+    is_hae = isinstance(model, HomogeneousAutoencoder) and config.adaptive_lambda
 
+    in_warmup = is_hae
+    lambda_eff = 0.0 if is_hae else config.lambda_cor
+    baseline_recon: float | None = None
+    ema_recon: float | None = None
+
+    best_val_recon = float("inf")
     best_val_metric = float("inf")
     best_state = None
     epochs_without_improvement = 0
-    patience = int(getattr(config, "patience", 0))
 
     for epoch in range(1, config.epochs + 1):
         train_metrics = _run_epoch(
@@ -132,36 +138,58 @@ def train(
             train=False, lambda_cor_override=lambda_eff,
         )
 
-        # Adaptive lambda: warmup then grow/decay relative to fixed baseline
-        if config.adaptive_lambda:
+        patience_budget = 0
+        if in_warmup:
             raw_recon = val_metrics["reconstruction"]
             alpha_ema = config.ratchet_ema
-            if ema_recon is None:
-                ema_recon = raw_recon
-            else:
-                ema_recon = alpha_ema * raw_recon + (1 - alpha_ema) * ema_recon
+            ema_recon = raw_recon if ema_recon is None else (
+                alpha_ema * raw_recon + (1 - alpha_ema) * ema_recon
+            )
 
-            if baseline_recon is None:
-                # Warmup phase: lambda stays at 0, pure reconstruction
-                if epoch >= warmup_epochs:
-                    baseline_recon = ema_recon
-                    lambda_eff = 1e-4
-                    # Reset early-stopping so penalty phase gets fair patience
-                    best_val_metric = float("inf")
-                    epochs_without_improvement = 0
-                    if verbose:
-                        print(
-                            f"  [warmup done at epoch {epoch}] "
-                            f"baseline_recon={baseline_recon:.5f}, "
-                            f"starting penalty phase"
-                        )
+            if raw_recon < best_val_recon:
+                best_val_recon = raw_recon
+                best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+                epochs_without_improvement = 0
             else:
-                # Growth phase: grow when recon is within tolerance of baseline
+                epochs_without_improvement += 1
+
+            converged = epochs_without_improvement >= config.recon_patience
+            hit_cap = epoch >= config.warmup_max_epochs
+            if converged or hit_cap:
+                baseline_recon = ema_recon
+                lambda_eff = 1e-4
+                in_warmup = False
+                best_val_metric = float("inf")
+                epochs_without_improvement = 0
+                if verbose:
+                    reason = "converged" if converged else "max cap"
+                    print(
+                        f"  [warmup exit at epoch {epoch} ({reason})] "
+                        f"baseline_recon={baseline_recon:.5f}, "
+                        f"starting penalty phase"
+                    )
+        else:
+            if is_hae:
+                assert baseline_recon is not None and ema_recon is not None
+                raw_recon = val_metrics["reconstruction"]
+                alpha_ema = config.ratchet_ema
+                ema_recon = alpha_ema * raw_recon + (1 - alpha_ema) * ema_recon
                 if ema_recon <= baseline_recon * (1 + config.recon_tolerance):
                     lambda_eff = min(config.lambda_max,
                                      lambda_eff * config.lambda_growth)
                 else:
                     lambda_eff = lambda_eff * config.lambda_decay
+                patience_budget = config.penalty_patience
+            else:
+                patience_budget = config.recon_patience
+
+            val_checkpoint = val_metrics[checkpoint_key]
+            if val_checkpoint < best_val_metric:
+                best_val_metric = val_checkpoint
+                best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+                epochs_without_improvement = 0
+            else:
+                epochs_without_improvement += 1
 
         history["epoch"].append(epoch)
         history["train_total"].append(train_metrics["total"])
@@ -172,17 +200,8 @@ def train(
         history["val_penalty"].append(val_metrics["penalty"])
         history["lambda_eff"].append(lambda_eff)
 
-        # Checkpointing on the chosen metric
-        val_checkpoint = val_metrics[checkpoint_key]
-        if val_checkpoint < best_val_metric:
-            best_val_metric = val_checkpoint
-            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-            epochs_without_improvement = 0
-        else:
-            epochs_without_improvement += 1
-
         if verbose and (epoch == 1 or epoch % 20 == 0 or epoch == config.epochs):
-            lam_str = f", λ={lambda_eff:.2e}" if config.adaptive_lambda else ""
+            lam_str = f", λ={lambda_eff:.2e}" if is_hae else ""
             print(
                 f"  epoch {epoch:3d} | "
                 f"train {train_metrics['total']:.5f} "
@@ -194,9 +213,9 @@ def train(
                 f"{lam_str}"
             )
 
-        if patience > 0 and epochs_without_improvement >= patience:
+        if patience_budget > 0 and epochs_without_improvement >= patience_budget:
             if verbose:
-                print(f"  early stopping at epoch {epoch} (patience {patience})")
+                print(f"  early stopping at epoch {epoch} (patience {patience_budget})")
             break
 
     if best_state is not None:
@@ -210,7 +229,7 @@ def fit_pca_baseline(
     train_data: torch.Tensor,
     val_data: torch.Tensor,
     config: TrainConfig,
-) -> Dict[str, List[float]]:
+) -> dict[str, list[float]]:
     """One-shot SVD fit returning a history-dict compatible with train(...)."""
     model.to(config.device)
     with torch.no_grad():

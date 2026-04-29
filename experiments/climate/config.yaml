@@ -1,0 +1,133 @@
+# ERA5 download + preprocess + train config.
+#
+# One file drives three scripts:
+#   download.py  — uses the download block (dataset, years, area, grid, ...)
+#   preprocess.py — uses the preprocess block (standardise, log_transform, ...)
+#   run.py       — uses per_variable[NAME] for training hyperparameters
+#
+# Profiles: apply `--profile hires` on the download + preprocess CLIs to
+# overlay the `profiles.hires:` block. Run.py has no profiles.
+
+# ---- download -----------------------------------------------------------------
+dataset: reanalysis-era5-single-levels
+output_dir: data
+years: [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
+        2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019,
+        2020, 2021, 2022, 2023]
+months: all
+days: all
+times: ["00:00", "06:00", "12:00", "18:00"]
+area: [56, -6, 50, 2]
+grid: [0.5, 0.5]
+product_type: reanalysis
+format: netcdf
+year_batch_size: 6
+variables:
+  - 10m_u_component_of_wind
+  - 10m_v_component_of_wind
+  - total_precipitation
+  - 2m_temperature
+  - mean_sea_level_pressure
+
+# ---- preprocess ---------------------------------------------------------------
+vectorisation: regional
+standardise: true
+precip_jitter: true
+log_transform_variables:
+  - total_precipitation
+sample_seed: 42
+tensor_name: era5_tensor.pt
+univariate_runs:
+  - 10m_u_component_of_wind
+  - total_precipitation
+  - 2m_temperature
+
+# ---- alternative download/preprocess profile ---------------------------------
+# `preprocess.py --config config.yaml --profile hires` merges these onto the
+# defaults above. Keys absent from `hires` keep their base value.
+profiles:
+  # Skip log1p and z-score for tp so the raw [0, ∞) support is preserved.
+  # Use to emit data/era5_tp_native.pt for the tp_pareto_native experiment:
+  #   python experiments/climate/preprocess.py --config config.yaml --profile tp_native
+  tp_native:
+    log_transform_variables: []
+    standardise: false
+    tensor_name: era5_tensor_native.pt
+    univariate_suffix: _native
+    univariate_runs:
+      - total_precipitation
+  hires:
+    years: [1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988,
+            1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+            1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
+            2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018,
+            2019, 2020, 2021, 2022, 2023]
+    # SW England / Wales: tighter spatial extent, 0.25° native resolution
+    area: [53.5, -5.5, 50.0, -2.5]
+    grid: [0.25, 0.25]
+    year_batch_size: 5
+
+# ---- training (per-variable hyperparameters for run.py) ----------------------
+# Keys are the short names produced by preprocess.py's `_short_name` mapping:
+#   u10 / v10 / tp / t2m / msp  (per-variable tensors)
+#   tensor                      (joint tensor over every variable)
+# run.py resolves `--var <name>` against this block; unknown names fall back
+# to the `default:` entry.
+samples_per_year: 1460  # ERA5 6-hourly = 4 samples/day × 365 days
+
+per_variable:
+  default:
+    tensor: data/era5_tensor.pt
+    epochs: 2000
+    recon_patience: 150
+    penalty_patience: 300
+    warmup_max_epochs: 600
+    hidden_dim: 256
+    hidden_layers: 3
+    latent_dim: 32
+    lambda_max: 0.05
+    lambda_growth: 1.03
+    recon_tolerance: 0.10
+    ratchet_ema: 0.05
+    weight_decay: 1.0e-5
+  u10:
+    tensor: data/era5_u10.pt
+    latent_dim: 8
+    hidden_dim: 128
+  u10_pareto:
+    tensor: data/era5_u10.pt
+    latent_dim: 8
+    hidden_dim: 128
+    pre_standardize_to_pareto_margins: true
+    pareto_target_alpha: 1.0
+    pit_threshold_quantile: 0.975
+  tp:
+    tensor: data/era5_tp.pt
+    latent_dim: 32
+    hidden_dim: 128
+  tp_pareto:
+    tensor: data/era5_tp.pt
+    latent_dim: 32
+    hidden_dim: 128
+    pre_standardize_to_pareto_margins: true
+    pareto_target_alpha: 1.0
+    pit_threshold_quantile: 0.975
+  tp_pareto_native:
+    # Raw precipitation tensor (no log1p, no z-score) — emitted by
+    # preprocess.py with --profile tp_native. Domain [0, ∞) maps cleanly
+    # to standard one-sided Pareto's [1, ∞) without the log1p detour.
+    tensor: data/era5_tp_native.pt
+    latent_dim: 32
+    hidden_dim: 128
+    pre_standardize_to_pareto_margins: true
+    pareto_target_alpha: 1.0
+    pit_threshold_quantile: 0.975
+    pareto_target_kind: one_sided
+  t2m:
+    tensor: data/era5_t2m.pt
+    latent_dim: 8
+    hidden_dim: 128
+  tensor:
+    tensor: data/era5_tensor.pt
+    latent_dim: 32
+    hidden_dim: 256

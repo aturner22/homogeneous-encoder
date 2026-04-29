@@ -19,20 +19,22 @@ hidden_dim, StdAE params) for transparency.
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from lib.config import FlexibleToyConfig, ensure_output_dir  # noqa: E402
-from lib.models import (  # noqa: E402
+from lib.cli import init_experiment, parse_standard_args
+from lib.config import FlexibleToyConfig
+from lib.models import (
     HomogeneousAutoencoder,
     StandardAutoencoder,
     compute_matched_hidden_dim,
     count_parameters,
 )
-from lib.sweep import MODEL_NAMES, run_flexible_toy_sweep, write_sweep_json  # noqa: E402
-from lib.viz import save_exp02_panel_set, save_sweep_metric  # noqa: E402
+from lib.sweep import (
+    MODEL_NAMES,
+    run_flexible_toy_sweep,
+    single_seed_series,
+    write_sweep_json,
+)
+from lib.viz import save_diagnostic_panel_set, save_sweep_metric
 
 
 def _print_param_table(
@@ -47,6 +49,7 @@ def _print_param_table(
             D=base_config.D, m=base_config.m,
             hidden_dim=hd, hidden_layers=base_config.hidden_layers,
             p_homogeneity=base_config.p_homogeneity,
+            learnable_centre=base_config.learnable_centre,
         )
         hae_p = count_parameters(hae)
         stdae_hd = compute_matched_hidden_dim(
@@ -62,9 +65,9 @@ def _print_param_table(
 
 
 def main() -> None:
-    output_dir = Path(__file__).resolve().parent / "results"
-    base_config = FlexibleToyConfig(output_dir=str(output_dir))
-    ensure_output_dir(base_config)
+    args = parse_standard_args(description=__doc__)
+    base_config = init_experiment(Path(__file__), FlexibleToyConfig)
+    output = Path(base_config.output_dir)
 
     hidden_dims = [32, 64, 128, 256]
 
@@ -74,54 +77,40 @@ def main() -> None:
         base_config=base_config,
         parameter_name="hidden_dim",
         parameter_values=hidden_dims,
+        artifact_root=output,
+        force_retrain=args.force_retrain,
+        require_cache=args.plot_only,
     )
 
-    output = Path(base_config.output_dir)
     write_sweep_json(result, output / "sweep.json")
 
-    series_by_model = result["metrics"]
-    xlabel = "hidden dimension"
+    single_seed_series_by_model = single_seed_series(result["raw"])
+    xlabel = "Hidden Dimension"
 
-    save_sweep_metric(
-        parameter_values=hidden_dims,
-        series_by_model=series_by_model,
-        output_path=output / "fig_hidden_dim_reconstruction.png",
-        metric_key="reconstruction_mse",
-        xlabel=xlabel,
-        ylabel="reconstruction MSE",
-        yscale="log",
+    metric_specs = (
+        ("reconstruction_mse", "fig_hidden_dim_reconstruction.png", "Reconstruction MSE", "log"),
+        ("hill_drift_latent", "fig_hidden_dim_hill_drift.png",
+         "Hill Drift", None),
+        ("extrapolation_mse_at_10", "fig_hidden_dim_extrapolation.png",
+         "Extrapolation MSE at Scale 10", "log"),
+        ("tail_conditional_mse", "fig_hidden_dim_tail_mse.png",
+         "Tail-conditional MSE (Top 5%)", "log"),
     )
-    save_sweep_metric(
-        parameter_values=hidden_dims,
-        series_by_model=series_by_model,
-        output_path=output / "fig_hidden_dim_hill_drift.png",
-        metric_key="hill_drift_latent",
-        xlabel=xlabel,
-        ylabel=r"$|\hat\alpha_{\mathrm{lat}}\, p - \hat\alpha_{\mathrm{amb}}|$",
-    )
-    save_sweep_metric(
-        parameter_values=hidden_dims,
-        series_by_model=series_by_model,
-        output_path=output / "fig_hidden_dim_extrapolation.png",
-        metric_key="extrapolation_mse_at_10",
-        xlabel=xlabel,
-        ylabel=r"extrapolation MSE at $\lambda=10$",
-        yscale="log",
-    )
-    save_sweep_metric(
-        parameter_values=hidden_dims,
-        series_by_model=series_by_model,
-        output_path=output / "fig_hidden_dim_tail_mse.png",
-        metric_key="tail_conditional_mse",
-        xlabel=xlabel,
-        ylabel=r"tail-conditional MSE ($q_{0.95}$)",
-        yscale="log",
-    )
-
-    for value, point in zip(hidden_dims, result["per_seed_points"]):
+    for metric_key, filename, ylabel, yscale in metric_specs:
+        save_sweep_metric(
+            parameter_values=hidden_dims,
+            series_by_model=single_seed_series_by_model,
+            output_path=output / filename,
+            metric_key=metric_key,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            yscale=yscale,
+            show_bands=False,
+        )
+    for value, point in zip(hidden_dims, result["per_seed_points"], strict=True):
         subdir = output / f"point_hidden_dim={value}"
         subdir.mkdir(exist_ok=True)
-        save_exp02_panel_set(
+        save_diagnostic_panel_set(
             {name: point[name][0] for name in MODEL_NAMES},
             subdir,
             p=base_config.p_homogeneity,
